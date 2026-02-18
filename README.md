@@ -4,6 +4,14 @@ A shared memory wall for two people who love each other. Built with Electron, Re
 
 Drop text notes, voice memos, and links onto an infinite canvas that syncs in real time between two devices — no matter the distance.
 
+[See it in action](https://vimeo.com/1165906210?fl=pl&fe=ti)
+
+![Canvas with notes, voice memos, and transcriptions](images/full%20app.png)
+
+![AI-powered search finds memories by meaning](images/search.png)
+
+![Daily reflective question prompt](images/question%20of%20the%20day.png)
+
 ## Features
 
 - **Infinite canvas** — pan, zoom, and scatter notes anywhere
