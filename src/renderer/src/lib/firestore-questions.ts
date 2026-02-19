@@ -1,4 +1,4 @@
-import { doc, getDoc, setDoc, collection, getDocs } from 'firebase/firestore'
+import { doc, getDoc, setDoc, updateDoc, collection, getDocs, arrayUnion } from 'firebase/firestore'
 import { db } from './firebase'
 
 const QUESTIONS_COLLECTION = 'daily_questions'
@@ -8,6 +8,7 @@ interface DailyQuestionDoc {
   date: string
   starterIndex?: number
   createdAt: string
+  answeredBy?: string[]
 }
 
 function todayId(): string {
@@ -54,4 +55,14 @@ export async function getPastQuestions(): Promise<{
   })
 
   return { dates, usedStarterIndices }
+}
+
+export async function markQuestionAnswered(
+  date: string,
+  identity: string
+): Promise<void> {
+  const ref = doc(db, QUESTIONS_COLLECTION, date)
+  await updateDoc(ref, {
+    answeredBy: arrayUnion(identity)
+  })
 }

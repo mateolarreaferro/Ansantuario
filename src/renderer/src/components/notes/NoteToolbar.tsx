@@ -1,22 +1,24 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
-import { updateNote, deleteNote } from '../../lib/firestore-notes'
+import { updateNote, deleteNote, addNote } from '../../lib/firestore-notes'
 import { deleteField } from 'firebase/firestore'
 import { NOTE_COLORS, NOTE_SIZES } from '../../types/note'
 import type { Note, NoteType } from '../../types/note'
 import { useAppStore } from '../../stores/appStore'
-import { playSfxClick, playSfxDelete } from '../../lib/audio'
+import { playSfxClick, playSfxDelete, playSfxCreate } from '../../lib/audio'
 
 interface NoteToolbarProps {
   noteId: string
   noteColor: string
   noteType: NoteType
+  noteX: number
+  noteY: number
 }
 
-export default function NoteToolbar({ noteId, noteColor, noteType }: NoteToolbarProps) {
+export default function NoteToolbar({ noteId, noteColor, noteType, noteX, noteY }: NoteToolbarProps) {
   const [showColors, setShowColors] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
-  const setSelectedNoteId = useAppStore((s) => s.setSelectedNoteId)
+  const { setSelectedNoteId, identity } = useAppStore()
 
   const handleColorChange = (color: string) => {
     updateNote(noteId, { color } as Partial<Note>)
@@ -33,6 +35,15 @@ export default function NoteToolbar({ noteId, noteColor, noteType }: NoteToolbar
   const handleConvertToVoice = () => {
     updateNote(noteId, { type: 'voice', audioUrl: '', audioPath: '', duration: 0, content: deleteField(), searchText: '' } as any)
     playSfxClick()
+  }
+
+  const handleReply = async () => {
+    if (!identity) return
+    playSfxCreate()
+    const id = await addNote('text', identity, { x: noteX + 260, y: noteY + 20 }, {
+      replyTo: noteId
+    } as any)
+    setSelectedNoteId(id)
   }
 
   const handleDelete = async () => {
@@ -98,6 +109,17 @@ export default function NoteToolbar({ noteId, noteColor, noteType }: NoteToolbar
           </svg>
         </button>
       )}
+
+      {/* Reply */}
+      <button
+        onClick={handleReply}
+        style={toolbarBtnStyle}
+        title="Responder"
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+        </svg>
+      </button>
 
       {/* Delete */}
       <button

@@ -1,19 +1,30 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useAudioRecorder } from '../../hooks/useAudioRecorder'
 import { updateNote } from '../../lib/firestore-notes'
+import { uploadAudio } from '../../lib/firebase-storage'
 import type { VoiceNote as VoiceNoteType } from '../../types/note'
 
 interface VoiceNoteProps {
   note: VoiceNoteType
 }
 
+function blobToDataUrl(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onloadend = () => resolve(reader.result as string)
+    reader.onerror = reject
+    reader.readAsDataURL(blob)
+  })
+}
+
 export default function VoiceNote({ note }: VoiceNoteProps) {
-  const { isRecording, duration, audioBlob, startRecording, stopRecording, resetRecording } =
+  const { isRecording, duration, audioBlob, error, startRecording, stopRecording, resetRecording } =
     useAudioRecorder()
   const [isPlaying, setIsPlaying] = useState(false)
   const [playProgress, setPlayProgress] = useState(0)
   const [saving, setSaving] = useState(false)
   const [transcribing, setTranscribing] = useState(false)
+  const [retranscribing, setRetranscribing] = useState(false)
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const animFrameRef = useRef<number>(0)
   const autoStartedRef = useRef(false)
@@ -31,44 +42,75 @@ export default function VoiceNote({ note }: VoiceNoteProps) {
     }
   }, [])
 
-  // Save audio blob as data URL when recording stops
+  // Save audio blob to Firebase Storage when recording stops
   useEffect(() => {
     if (audioBlob && !isRecording) {
       setSaving(true)
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        const dataUrl = reader.result as string
-        updateNote(note.id, {
-          audioUrl: dataUrl,
-          audioPath: 'local',
-          duration,
-          searchText: `Nota de voz (${duration}s)`
-        } as Partial<VoiceNoteType>)
-        resetRecording()
-        setSaving(false)
 
-        // Transcribe in background
-        setTranscribing(true)
-        ;(window as any).api.audio
-          .transcribe(dataUrl)
-          .then((transcript: string) => {
+      // Upload to Firebase Storage
+      uploadAudio(audioBlob, note.id)
+        .then(async ({ url, path }) => {
+          await updateNote(note.id, {
+            audioUrl: url,
+            audioPath: path,
+            duration,
+            searchText: `Nota de voz (${duration}s)`
+          } as Partial<VoiceNoteType>)
+
+          // Transcribe in background using a local data URL (not stored in Firestore)
+          setTranscribing(true)
+          try {
+            const dataUrl = await blobToDataUrl(audioBlob)
+            const transcript: string = await (window as any).api.audio.transcribe(dataUrl)
             if (transcript) {
-              updateNote(note.id, {
+              await updateNote(note.id, {
                 transcript,
                 searchText: transcript
               } as Partial<VoiceNoteType>)
             }
-          })
-          .catch((err: unknown) => {
+          } catch (err) {
             console.error('Transcription failed:', err)
-          })
-          .finally(() => {
+          } finally {
             setTranscribing(false)
-          })
-      }
-      reader.readAsDataURL(audioBlob)
+          }
+
+          resetRecording()
+        })
+        .catch((err) => {
+          console.error('Audio upload failed:', err)
+        })
+        .finally(() => {
+          setSaving(false)
+        })
     }
   }, [audioBlob, isRecording])
+
+  // Retry transcription for existing notes that have audio but no transcript
+  const handleRetranscribe = useCallback(async () => {
+    if (!note.audioUrl || retranscribing) return
+    setRetranscribing(true)
+    try {
+      let dataUrl: string
+      if (note.audioUrl.startsWith('data:')) {
+        dataUrl = note.audioUrl
+      } else {
+        const response = await fetch(note.audioUrl)
+        const blob = await response.blob()
+        dataUrl = await blobToDataUrl(blob)
+      }
+      const transcript: string = await (window as any).api.audio.transcribe(dataUrl)
+      if (transcript) {
+        await updateNote(note.id, {
+          transcript,
+          searchText: transcript
+        } as Partial<VoiceNoteType>)
+      }
+    } catch (err) {
+      console.error('Retranscription failed:', err)
+    } finally {
+      setRetranscribing(false)
+    }
+  }, [note.audioUrl, note.id, retranscribing])
 
   const togglePlay = useCallback(() => {
     if (!note.audioUrl) return
@@ -124,6 +166,10 @@ export default function VoiceNote({ note }: VoiceNoteProps) {
         <div style={{ textAlign: 'center', padding: 12, color: '#9B8E82', fontSize: '0.875rem' }}>Guardando...</div>
       )}
 
+      {error && (
+        <div style={{ textAlign: 'center', padding: 12, color: '#E07A5F', fontSize: '0.8rem' }}>{error}</div>
+      )}
+
       {!hasAudio && !isRecording && !saving && (
         <button
           onClick={() => startRecording()}
@@ -167,15 +213,34 @@ export default function VoiceNote({ note }: VoiceNoteProps) {
           </div>
 
           {/* Transcription */}
-          {transcribing && (
+          {(transcribing || retranscribing) && (
             <div style={{ marginTop: 8, fontSize: '0.75rem', color: '#9B8E82', fontStyle: 'italic' }}>
               Transcribiendo...
             </div>
           )}
-          {note.transcript && !transcribing && (
+          {note.transcript && !transcribing && !retranscribing && (
             <div style={{ marginTop: 8, fontSize: '0.75rem', color: '#6B5E52', fontStyle: 'italic', lineHeight: 1.4 }}>
               {note.transcript}
             </div>
+          )}
+          {/* Retry transcription button for notes without transcript */}
+          {!note.transcript && !transcribing && !retranscribing && (
+            <button
+              onClick={handleRetranscribe}
+              style={{
+                marginTop: 8,
+                padding: '4px 12px',
+                borderRadius: 8,
+                background: 'rgba(61,50,41,0.08)',
+                color: '#6B5E52',
+                fontSize: '0.7rem',
+                fontWeight: 500,
+                cursor: 'pointer',
+                border: 'none'
+              }}
+            >
+              Transcribir
+            </button>
           )}
         </div>
       )}

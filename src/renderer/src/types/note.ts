@@ -24,6 +24,7 @@ export interface BaseNote {
   color: string
   zIndex: number
   searchText: string
+  replyTo?: string
 }
 
 export interface TextNote extends BaseNote {

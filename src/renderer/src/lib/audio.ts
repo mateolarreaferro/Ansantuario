@@ -23,23 +23,34 @@ const PLAYLIST: Track[] = [
 ]
 
 let currentTrackIndex = 0
-let music = new Audio(PLAYLIST[0].src)
-music.volume = 0
+let music: HTMLAudioElement | null = null
 let musicPlaying = false
 let fadeInterval: ReturnType<typeof setInterval> | null = null
+
+function getMusic(): HTMLAudioElement {
+  if (!music) {
+    music = new Audio(PLAYLIST[currentTrackIndex].src)
+    music.volume = 0
+    music.onerror = (e) => {
+      console.error('Audio load error:', e)
+    }
+  }
+  return music
+}
 
 /** Fade volume from current level to `target` over `ms` milliseconds. */
 function fadeMusicTo(target: number, ms = 2000) {
   if (fadeInterval) clearInterval(fadeInterval)
+  const m = getMusic()
   const step = 30
   const ticks = ms / step
-  const delta = (target - music.volume) / ticks
+  const delta = (target - m.volume) / ticks
   let count = 0
   fadeInterval = setInterval(() => {
     count++
-    music.volume = Math.min(1, Math.max(0, music.volume + delta))
+    m.volume = Math.min(1, Math.max(0, m.volume + delta))
     if (count >= ticks) {
-      music.volume = Math.min(1, Math.max(0, target))
+      m.volume = Math.min(1, Math.max(0, target))
       clearInterval(fadeInterval!)
       fadeInterval = null
     }
@@ -47,7 +58,7 @@ function fadeMusicTo(target: number, ms = 2000) {
 }
 
 function setupAutoAdvance() {
-  music.onended = () => {
+  getMusic().onended = () => {
     if (!musicPlaying) return
     skipTrack('next')
   }
@@ -56,9 +67,12 @@ function setupAutoAdvance() {
 /** Start background music with a gentle fade-in (call once after auth). */
 export function startMusic() {
   if (musicPlaying) return
-  music.loop = true
-  music.volume = 0
-  music.play().catch(() => {})
+  const m = getMusic()
+  m.loop = true
+  m.volume = 0
+  m.play().catch((err) => {
+    console.warn('Music play failed:', err)
+  })
   fadeMusicTo(0.25, 3000)
   musicPlaying = true
   setupAutoAdvance()
@@ -66,12 +80,15 @@ export function startMusic() {
 
 /** Toggle mute / unmute. Returns new playing state. */
 export function toggleMusic(): boolean {
+  const m = getMusic()
   if (musicPlaying) {
     fadeMusicTo(0, 600)
-    setTimeout(() => music.pause(), 650)
+    setTimeout(() => m.pause(), 650)
     musicPlaying = false
   } else {
-    music.play().catch(() => {})
+    m.play().catch((err) => {
+      console.warn('Music play failed:', err)
+    })
     fadeMusicTo(0.25, 600)
     musicPlaying = true
   }
@@ -88,10 +105,11 @@ export function skipTrack(direction: 'next' | 'prev'): Track {
 
   // Fade out current
   fadeMusicTo(0, 400)
+  const m = getMusic()
   setTimeout(() => {
-    music.pause()
-    music.currentTime = 0
-    music.onended = null
+    m.pause()
+    m.currentTime = 0
+    m.onended = null
 
     // Advance index
     if (direction === 'next') {
@@ -104,10 +122,15 @@ export function skipTrack(direction: 'next' | 'prev'): Track {
     music = new Audio(PLAYLIST[currentTrackIndex].src)
     music.loop = true
     music.volume = 0
+    music.onerror = (e) => {
+      console.error('Audio load error:', e)
+    }
     setupAutoAdvance()
 
     if (wasPlaying) {
-      music.play().catch(() => {})
+      music.play().catch((err) => {
+        console.warn('Music play failed:', err)
+      })
       fadeMusicTo(0.25, 400)
     }
   }, 450)

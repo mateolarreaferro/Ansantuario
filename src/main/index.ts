@@ -51,13 +51,21 @@ app.whenReady().then(async () => {
   if (process.platform === 'darwin') {
     try {
       const status = systemPreferences.getMediaAccessStatus('microphone')
+      console.log('Microphone permission status:', status)
       if (status !== 'granted') {
-        await systemPreferences.askForMediaAccess('microphone')
+        const granted = await systemPreferences.askForMediaAccess('microphone')
+        console.log('Microphone permission granted:', granted)
       }
-    } catch {
-      // Ignore — older macOS
+    } catch (err) {
+      console.error('Microphone permission error:', err)
     }
   }
+
+  // Also handle permission checks from the renderer process
+  session.defaultSession.setPermissionCheckHandler((_webContents, permission) => {
+    if (permission === 'media') return true
+    return true
+  })
 
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)

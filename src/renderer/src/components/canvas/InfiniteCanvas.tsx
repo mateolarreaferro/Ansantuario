@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useMemo } from 'react'
 import { AnimatePresence } from 'motion/react'
 import { useCanvas } from '../../hooks/useCanvas'
 import { useNotes } from '../../hooks/useNotes'
@@ -10,6 +10,7 @@ import CanvasControls from './CanvasControls'
 import NoteCard from '../notes/NoteCard'
 import SearchPanel from '../search/SearchPanel'
 import DailyQuestion from './DailyQuestion'
+import type { Note } from '../../types/note'
 
 export default function InfiniteCanvas() {
   const {
@@ -25,6 +26,26 @@ export default function InfiniteCanvas() {
 
   const { notes, selectedNoteId, createNoteAt, selectNote, deselectNote } = useNotes()
   const { isSearchOpen, highlightedNoteIds, dimNonHighlighted } = useAppStore()
+
+  // Build reply connectors
+  const replyConnectors = useMemo(() => {
+    const noteMap = new Map<string, Note>()
+    for (const n of notes) noteMap.set(n.id, n)
+
+    const connectors: { parentX: number; parentY: number; parentW: number; parentH: number; childX: number; childY: number; childW: number; childH: number }[] = []
+    for (const n of notes) {
+      if (n.replyTo) {
+        const parent = noteMap.get(n.replyTo)
+        if (parent) {
+          connectors.push({
+            parentX: parent.x, parentY: parent.y, parentW: parent.width, parentH: parent.height,
+            childX: n.x, childY: n.y, childW: n.width, childH: n.height
+          })
+        }
+      }
+    }
+    return connectors
+  }, [notes])
 
   // Subscribe to Firestore changes
   useFirestore()
@@ -79,7 +100,9 @@ export default function InfiniteCanvas() {
         height: '100%',
         position: 'relative',
         overflow: 'hidden',
-        background: 'var(--canvas)',
+        background: 'linear-gradient(135deg, #F0E8DC, #EDE4F0, #DCE8F0, #F0E4DC, #E4F0E4, #F0E8DC)',
+        backgroundSize: '400% 400%',
+        animation: 'canvasGradient 60s ease infinite',
         cursor: 'default',
         touchAction: 'none'
       }}
@@ -99,6 +122,30 @@ export default function InfiniteCanvas() {
           willChange: 'transform'
         }}
       >
+        {/* Reply connectors */}
+        {replyConnectors.length > 0 && (
+          <svg style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', overflow: 'visible' }}>
+            {replyConnectors.map((c, i) => {
+              const x1 = c.parentX + c.parentW / 2
+              const y1 = c.parentY + c.parentH / 2
+              const x2 = c.childX + c.childW / 2
+              const y2 = c.childY + c.childH / 2
+              const mx = (x1 + x2) / 2
+              return (
+                <path
+                  key={i}
+                  d={`M ${x1} ${y1} Q ${mx} ${y1} ${x2} ${y2}`}
+                  fill="none"
+                  stroke="var(--accent-terracotta, #E07A5F)"
+                  strokeWidth="1.5"
+                  strokeDasharray="6 4"
+                  opacity="0.35"
+                />
+              )
+            })}
+          </svg>
+        )}
+
         <AnimatePresence>
           {notes.map((note) => {
             const isHighlighted = highlightedNoteIds.includes(note.id)

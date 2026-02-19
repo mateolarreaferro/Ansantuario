@@ -138,7 +138,28 @@ export default function NoteCard({ note, isSelected, isHighlighted, isDimmed, on
           </div>
         </div>
 
-        {isSelected && <NoteToolbar noteId={note.id} noteColor={note.color} noteType={note.type} />}
+        {/* Reply indicator */}
+        {note.replyTo && (
+          <div style={{
+            position: 'absolute',
+            top: -18,
+            left: 8,
+            fontSize: '0.6rem',
+            color: 'var(--text-muted)',
+            opacity: 0.7,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 3,
+            pointerEvents: 'none'
+          }}>
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+            respuesta
+          </div>
+        )}
+
+        {isSelected && <NoteToolbar noteId={note.id} noteColor={note.color} noteType={note.type} noteX={note.x} noteY={note.y} />}
       </motion.div>
       </div>
     </div>

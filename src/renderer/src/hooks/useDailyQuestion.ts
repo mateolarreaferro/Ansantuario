@@ -2,13 +2,21 @@ import { useState, useEffect } from 'react'
 import { getTodayQuestion, saveDailyQuestion, getPastQuestions } from '../lib/firestore-questions'
 import { useAppStore } from '../stores/appStore'
 
-const DISMISSED_KEY = 'daily-question-dismissed'
+function todayId(): string {
+  const now = new Date()
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+}
 
 export function useDailyQuestion() {
+  const identity = useAppStore((s) => s.identity)
+  const dateId = todayId()
+  const dismissedKey = `daily-question-dismissed-${dateId}`
+
   const [question, setQuestion] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  const [answeredByMe, setAnsweredByMe] = useState(false)
   const [dismissed, setDismissed] = useState(() => {
-    return sessionStorage.getItem(DISMISSED_KEY) === 'true'
+    return sessionStorage.getItem(dismissedKey) === 'true'
   })
   const notes = useAppStore((s) => s.notes)
 
@@ -22,6 +30,10 @@ export function useDailyQuestion() {
         if (existing) {
           if (!cancelled) {
             setQuestion(existing.question)
+            // Check if current user already answered
+            if (identity && existing.answeredBy?.includes(identity)) {
+              setAnsweredByMe(true)
+            }
             setLoading(false)
           }
           return
@@ -43,9 +55,6 @@ export function useDailyQuestion() {
         )
 
         if (!cancelled && result.question) {
-          const today = new Date()
-          const dateId = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
-
           // Save to Firestore so both users see the same question
           await saveDailyQuestion(result.question, dateId, result.starterIndex)
           setQuestion(result.question)
@@ -65,8 +74,8 @@ export function useDailyQuestion() {
 
   const dismiss = () => {
     setDismissed(true)
-    sessionStorage.setItem(DISMISSED_KEY, 'true')
+    sessionStorage.setItem(dismissedKey, 'true')
   }
 
-  return { question, loading, dismissed, dismiss }
+  return { question, loading, dismissed, dismiss, answeredByMe, setAnsweredByMe, dateId }
 }

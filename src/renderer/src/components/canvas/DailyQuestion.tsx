@@ -1,14 +1,13 @@
-import { useState } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
 import { useDailyQuestion } from '../../hooks/useDailyQuestion'
 import { useAppStore } from '../../stores/appStore'
 import { addNote } from '../../lib/firestore-notes'
+import { markQuestionAnswered } from '../../lib/firestore-questions'
 import { playSfxCreate } from '../../lib/audio'
 
 export default function DailyQuestion() {
-  const { question, loading, dismissed, dismiss } = useDailyQuestion()
+  const { question, loading, dismissed, dismiss, answeredByMe, setAnsweredByMe, dateId } = useDailyQuestion()
   const { identity, viewport, setSelectedNoteId } = useAppStore()
-  const [answered, setAnswered] = useState(false)
 
   const handleResponder = async () => {
     if (!identity || !question) return
@@ -28,7 +27,10 @@ export default function DailyQuestion() {
 
     setSelectedNoteId(id)
     playSfxCreate()
-    setAnswered(true)
+
+    // Persist answered state per user in Firestore
+    await markQuestionAnswered(dateId, identity)
+    setAnsweredByMe(true)
 
     // Focus textarea and place cursor at end
     setTimeout(() => {
@@ -41,7 +43,7 @@ export default function DailyQuestion() {
     }, 100)
   }
 
-  if (loading || dismissed || answered || !question) return null
+  if (loading || dismissed || answeredByMe || !question) return null
 
   return (
     <AnimatePresence>

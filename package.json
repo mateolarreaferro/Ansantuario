@@ -32,7 +32,10 @@
           ]
         }
       ],
-      "category": "public.app-category.lifestyle"
+      "category": "public.app-category.lifestyle",
+      "extendInfo": {
+        "NSMicrophoneUsageDescription": "Ansantuario necesita acceso al micrófono para grabar notas de voz."
+      }
     },
     "dmg": {
       "contents": [

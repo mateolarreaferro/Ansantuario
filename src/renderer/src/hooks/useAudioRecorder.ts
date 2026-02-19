@@ -4,13 +4,28 @@ interface AudioRecorderState {
   isRecording: boolean
   duration: number
   audioBlob: Blob | null
+  error: string | null
+}
+
+function getSupportedMimeType(): string {
+  const candidates = [
+    'audio/webm;codecs=opus',
+    'audio/webm',
+    'audio/ogg;codecs=opus',
+    'audio/mp4'
+  ]
+  for (const mime of candidates) {
+    if (MediaRecorder.isTypeSupported(mime)) return mime
+  }
+  return ''
 }
 
 export function useAudioRecorder() {
   const [state, setState] = useState<AudioRecorderState>({
     isRecording: false,
     duration: 0,
-    audioBlob: null
+    audioBlob: null,
+    error: null
   })
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
@@ -22,6 +37,8 @@ export function useAudioRecorder() {
 
   const startRecording = useCallback(async () => {
     try {
+      setState((prev) => ({ ...prev, error: null }))
+
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
       streamRef.current = stream
 
@@ -33,9 +50,14 @@ export function useAudioRecorder() {
       source.connect(analyser)
       analyserRef.current = analyser
 
-      const mediaRecorder = new MediaRecorder(stream, {
-        mimeType: 'audio/webm;codecs=opus'
-      })
+      const mimeType = getSupportedMimeType()
+      if (!mimeType) {
+        stream.getTracks().forEach((t) => t.stop())
+        setState((prev) => ({ ...prev, error: 'Tu navegador no soporta grabación de audio.' }))
+        return
+      }
+
+      const mediaRecorder = new MediaRecorder(stream, { mimeType })
       mediaRecorderRef.current = mediaRecorder
       chunksRef.current = []
 
@@ -44,7 +66,7 @@ export function useAudioRecorder() {
       }
 
       mediaRecorder.onstop = () => {
-        const blob = new Blob(chunksRef.current, { type: 'audio/webm' })
+        const blob = new Blob(chunksRef.current, { type: mimeType })
         setState((prev) => ({ ...prev, audioBlob: blob, isRecording: false }))
         stream.getTracks().forEach((t) => t.stop())
       }
@@ -59,9 +81,13 @@ export function useAudioRecorder() {
         }))
       }, 1000)
 
-      setState({ isRecording: true, duration: 0, audioBlob: null })
+      setState({ isRecording: true, duration: 0, audioBlob: null, error: null })
     } catch (err) {
       console.error('Failed to start recording:', err)
+      setState((prev) => ({
+        ...prev,
+        error: 'No se pudo iniciar la grabación. Verifica los permisos del micrófono.'
+      }))
     }
   }, [])
 
@@ -76,7 +102,7 @@ export function useAudioRecorder() {
   }, [])
 
   const resetRecording = useCallback(() => {
-    setState({ isRecording: false, duration: 0, audioBlob: null })
+    setState({ isRecording: false, duration: 0, audioBlob: null, error: null })
     chunksRef.current = []
   }, [])
 
