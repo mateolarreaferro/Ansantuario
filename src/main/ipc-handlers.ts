@@ -1,6 +1,13 @@
 import { ipcMain } from 'electron'
 import { setPassword, verifyPassword, hasPassword, getIdentity } from './safe-storage'
-import { searchMemories } from './claude'
+import {
+  searchMemories,
+  analyzeSentiment,
+  describePhoto,
+  findRelatedMemories,
+  generateMemorySummary,
+  detectMilestones
+} from './claude'
 import { fetchLinkPreview } from './link-preview'
 import { transcribeAudio } from './whisper'
 import { generateDailyQuestion } from './daily-questions'
@@ -50,6 +57,53 @@ export function registerIpcHandlers(): void {
       notesContext: string[]
     ) => {
       return generateDailyQuestion(usedStarterIndices, notesContext)
+    }
+  )
+
+  // ─── New AI Handlers ──────────────────────────────────────────────
+
+  ipcMain.handle(
+    'ai:analyze-sentiment',
+    async (_event, text: string, noteType: string) => {
+      return analyzeSentiment(text, noteType)
+    }
+  )
+
+  ipcMain.handle('ai:describe-photo', async (_event, imageUrl: string) => {
+    return describePhoto(imageUrl)
+  })
+
+  ipcMain.handle(
+    'ai:related-memories',
+    async (
+      _event,
+      noteId: string,
+      noteText: string,
+      allNotes: { id: string; type: string; searchText: string; createdBy: string; createdAt: string }[]
+    ) => {
+      return findRelatedMemories(noteId, noteText, allNotes)
+    }
+  )
+
+  ipcMain.handle(
+    'ai:memory-summary',
+    async (
+      _event,
+      notes: { searchText: string; createdBy: string; createdAt: string; type: string }[],
+      period: string
+    ) => {
+      return generateMemorySummary(notes, period)
+    }
+  )
+
+  ipcMain.handle(
+    'ai:detect-milestones',
+    async (
+      _event,
+      notes: { id: string; type: string; searchText: string; createdBy: string; createdAt: string }[],
+      todayStr: string
+    ) => {
+      return detectMilestones(notes, todayStr)
     }
   )
 }

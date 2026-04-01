@@ -216,3 +216,43 @@ textarea {
   50%  { background-position: 100% 50%; }
   100% { background-position: 0% 50%; }
 }
+
+@keyframes presencePulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(129, 178, 154, 0.4); }
+  50% { box-shadow: 0 0 0 4px rgba(129, 178, 154, 0); }
+}
+
+/* === Dark Mode === */
+[data-theme="dark"] {
+  --bg: #1A1614;
+  --canvas: #211E1B;
+  --text: #E8DFD6;
+  --text-secondary: #B5A99E;
+  --text-muted: #7A6F66;
+
+  --accent-terracotta: #E8907A;
+  --accent-sage: #8FC4A8;
+  --accent-gold: #F5D9A0;
+
+  --note-cream: #2E2A24;
+  --note-peach: #302622;
+  --note-blush: #302424;
+  --note-lavender: #282430;
+  --note-mint: #242E28;
+  --note-sky: #24282E;
+  --note-butter: #2E2C22;
+  --note-coral: #302422;
+  --note-sage: #262E26;
+  --note-lilac: #2A2430;
+
+  --white: #262220;
+  --overlay: rgba(0, 0, 0, 0.6);
+  --border: rgba(232, 223, 214, 0.1);
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.25);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.3);
+  --shadow-note: 0 2px 8px rgba(0, 0, 0, 0.25), 0 1px 2px rgba(0, 0, 0, 0.15);
+  --shadow-note-hover: 0 8px 24px rgba(0, 0, 0, 0.3), 0 2px 4px rgba(0, 0, 0, 0.2);
+  --shadow-note-drag: 0 16px 40px rgba(0, 0, 0, 0.4), 0 4px 8px rgba(0, 0, 0, 0.25);
+}

@@ -24,3 +24,28 @@ export async function deleteAudio(path: string): Promise<void> {
     // File may already be deleted
   }
 }
+
+export async function uploadImage(
+  file: File,
+  noteId: string
+): Promise<{ url: string; path: string }> {
+  const ext = file.name.split('.').pop() || 'jpg'
+  const path = `images/${noteId}_${Date.now()}.${ext}`
+  const storageRef = ref(storage, path)
+
+  await uploadBytes(storageRef, file, {
+    contentType: file.type
+  })
+
+  const url = await getDownloadURL(storageRef)
+  return { url, path }
+}
+
+export async function deleteImage(path: string): Promise<void> {
+  try {
+    const storageRef = ref(storage, path)
+    await deleteObject(storageRef)
+  } catch {
+    // File may already be deleted
+  }
+}

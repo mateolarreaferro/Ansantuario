@@ -44,6 +44,18 @@ interface AppState {
   setMusicEnabled: (enabled: boolean) => void
   currentTrackTitle: string
   setCurrentTrackTitle: (title: string) => void
+
+  // Dark mode
+  isDarkMode: boolean
+  toggleDarkMode: () => void
+
+  // On This Day
+  isOnThisDayDismissed: boolean
+  setOnThisDayDismissed: (v: boolean) => void
+
+  // Sort/filter
+  sortMode: 'free' | 'recent' | 'oldest' | 'mine' | 'theirs' | 'favorites'
+  setSortMode: (mode: 'free' | 'recent' | 'oldest' | 'mine' | 'theirs' | 'favorites') => void
 }
 
 const DEFAULT_VIEWPORT: Viewport = { x: 0, y: 0, scale: 1 }
@@ -85,5 +97,23 @@ export const useAppStore = create<AppState>((set) => ({
   isMusicEnabled: true,
   setMusicEnabled: (enabled) => set({ isMusicEnabled: enabled }),
   currentTrackTitle: 'Bicho',
-  setCurrentTrackTitle: (title) => set({ currentTrackTitle: title })
+  setCurrentTrackTitle: (title) => set({ currentTrackTitle: title }),
+
+  // Dark mode
+  isDarkMode: localStorage.getItem('theme') === 'dark',
+  toggleDarkMode: () =>
+    set((state) => {
+      const next = !state.isDarkMode
+      localStorage.setItem('theme', next ? 'dark' : 'light')
+      document.documentElement.dataset.theme = next ? 'dark' : ''
+      return { isDarkMode: next }
+    }),
+
+  // On This Day
+  isOnThisDayDismissed: false,
+  setOnThisDayDismissed: (v) => set({ isOnThisDayDismissed: v }),
+
+  // Sort/filter
+  sortMode: 'free',
+  setSortMode: (mode) => set({ sortMode: mode })
 }))

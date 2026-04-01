@@ -1,3 +1,4 @@
+import { detectTopicGaps } from './claude'
 import Anthropic from '@anthropic-ai/sdk'
 
 let client: Anthropic | null = null
@@ -46,10 +47,22 @@ export async function generateDailyQuestion(
     return { question: STARTER_QUESTIONS[pick], starterIndex: pick }
   }
 
-  // All starters used — generate a personalized question with Claude
-  const anthropic = getClient()
+  // All starters used — try gap-aware question first, then fall back to general
+  const recentNotes = notesContext.slice(0, 30)
 
-  const contextSnippet = notesContext.slice(0, 30).join('\n')
+  if (recentNotes.length >= 5) {
+    try {
+      const gapQuestion = await detectTopicGaps(recentNotes, [])
+      if (gapQuestion) {
+        return { question: gapQuestion }
+      }
+    } catch (err) {
+      console.error('Gap-aware question failed, falling back:', err)
+    }
+  }
+
+  const anthropic = getClient()
+  const contextSnippet = recentNotes.join('\n')
 
   const response = await anthropic.messages.create({
     model: 'claude-sonnet-4-5-20250929',

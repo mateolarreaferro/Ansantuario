@@ -4,13 +4,14 @@ import {
   addDoc,
   updateDoc,
   deleteDoc,
+  getDoc,
   serverTimestamp,
   onSnapshot,
   query,
   orderBy
 } from 'firebase/firestore'
 import { db } from './firebase'
-import type { Note, NoteType, UserIdentity, LinkPreview } from '../types/note'
+import type { Note, NoteType, UserIdentity, LinkPreview, ReactionType } from '../types/note'
 import { NOTE_COLORS, NOTE_SIZES } from '../types/note'
 
 const NOTES_COLLECTION = 'notes'
@@ -56,6 +57,9 @@ export async function addNote(
       break
     case 'link':
       noteData = { ...base, url: '', preview: {}, ...extras }
+      break
+    case 'photo':
+      noteData = { ...base, imageUrl: '', imagePath: '', caption: '', searchText: 'Foto', ...extras }
       break
     default:
       noteData = base
@@ -123,4 +127,27 @@ export function subscribeToNotes(
     })) as Note[]
     callback(notes)
   })
+}
+
+export async function toggleReaction(
+  noteId: string,
+  reaction: ReactionType,
+  user: UserIdentity
+): Promise<void> {
+  const ref = doc(db, NOTES_COLLECTION, noteId)
+  const snap = await getDoc(ref)
+  if (!snap.exists()) return
+
+  const data = snap.data()
+  const reactions: Record<string, UserIdentity[]> = data.reactions || {}
+  const users = reactions[reaction] || []
+
+  if (users.includes(user)) {
+    reactions[reaction] = users.filter((u) => u !== user)
+    if (reactions[reaction].length === 0) delete reactions[reaction]
+  } else {
+    reactions[reaction] = [...users, user]
+  }
+
+  await updateDoc(ref, { reactions })
 }

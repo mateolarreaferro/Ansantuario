@@ -3,7 +3,7 @@ import { useAppStore } from '../stores/appStore'
 
 const MIN_SCALE = 0.2
 const MAX_SCALE = 3
-const ZOOM_SENSITIVITY = 0.001
+const ZOOM_SENSITIVITY = 0.005
 
 export function useCanvas() {
   const { viewport, setViewport, resetViewport } = useAppStore()
@@ -73,12 +73,12 @@ export function useCanvas() {
   )
 
   const zoomIn = useCallback(() => {
-    const newScale = Math.min(MAX_SCALE, viewport.scale * 1.2)
+    const newScale = Math.min(MAX_SCALE, viewport.scale * 1.35)
     setViewport({ scale: newScale })
   }, [viewport.scale, setViewport])
 
   const zoomOut = useCallback(() => {
-    const newScale = Math.max(MIN_SCALE, viewport.scale / 1.2)
+    const newScale = Math.max(MIN_SCALE, viewport.scale / 1.35)
     setViewport({ scale: newScale })
   }, [viewport.scale, setViewport])
 

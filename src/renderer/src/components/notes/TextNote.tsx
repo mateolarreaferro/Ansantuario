@@ -59,6 +59,17 @@ export default function TextNote({ note, isSelected }: TextNoteProps) {
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
     if (content !== note.content) {
       updateNoteContent(note.id, content)
+
+      // AI: analyze sentiment in background when content is substantial
+      if (content.trim().length >= 20) {
+        ;(window as any).api.ai.analyzeSentiment(content, 'text')
+          .then((sentiment: any) => {
+            if (sentiment) {
+              updateNote(note.id, { sentiment } as any)
+            }
+          })
+          .catch((err: any) => console.error('Sentiment analysis failed:', err))
+      }
     }
   }
 

@@ -1,6 +1,6 @@
 import { Timestamp } from 'firebase/firestore'
 
-export type NoteType = 'text' | 'voice' | 'link'
+export type NoteType = 'text' | 'voice' | 'link' | 'photo'
 export type UserIdentity = 'marielisa' | 'mateo'
 
 export interface LinkPreview {
@@ -8,6 +8,27 @@ export interface LinkPreview {
   description?: string
   image?: string
   favicon?: string
+}
+
+export type ReactionType = 'heart' | 'smile' | 'flame' | 'sparkle' | 'abrazo' | 'teardrop'
+
+export const REACTION_TYPES: ReactionType[] = ['heart', 'smile', 'flame', 'sparkle', 'abrazo', 'teardrop']
+
+export const REACTION_COLORS: Record<ReactionType, string> = {
+  heart: '#E07A5F',
+  smile: '#D4A043',
+  flame: '#E07A5F',
+  sparkle: '#C9922E',
+  abrazo: '#5E9E7E',
+  teardrop: '#6B8FAB'
+}
+
+export type EmotionTag = 'amor' | 'alegría' | 'nostalgia' | 'gratitud' | 'ternura' | 'tristeza' | 'emoción' | 'humor' | 'esperanza' | 'reflexión'
+
+export interface NoteSentiment {
+  tone: string          // e.g. "cálido", "reflexivo", "alegre"
+  emotions: EmotionTag[]
+  summary?: string      // short AI summary (used for voice notes)
 }
 
 export interface BaseNote {
@@ -25,6 +46,9 @@ export interface BaseNote {
   zIndex: number
   searchText: string
   replyTo?: string
+  reactions?: Record<string, UserIdentity[]>
+  sentiment?: NoteSentiment
+  aiDescription?: string  // AI-generated description for photos
 }
 
 export interface TextNote extends BaseNote {
@@ -46,7 +70,14 @@ export interface LinkNote extends BaseNote {
   preview: LinkPreview
 }
 
-export type Note = TextNote | VoiceNote | LinkNote
+export interface PhotoNote extends BaseNote {
+  type: 'photo'
+  imageUrl: string
+  imagePath: string
+  caption?: string
+}
+
+export type Note = TextNote | VoiceNote | LinkNote | PhotoNote
 
 export const NOTE_COLORS = [
   '#FFF8E7', // cream

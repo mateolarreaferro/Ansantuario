@@ -58,13 +58,13 @@ export default function DailyQuestion() {
           left: '50%',
           transform: 'translateX(-50%)',
           zIndex: 9999,
-          background: '#FFFDF7',
-          border: '1px solid rgba(61,50,41,0.12)',
+          background: 'var(--white)',
+          border: '1px solid var(--border)',
           borderRadius: 16,
           padding: '20px 24px',
           maxWidth: 420,
           width: '90vw',
-          boxShadow: '0 8px 32px rgba(61,50,41,0.12), 0 2px 8px rgba(61,50,41,0.06)',
+          boxShadow: 'var(--shadow-lg)',
           fontFamily: 'var(--font-body, Georgia, serif)'
         }}
       >
@@ -78,7 +78,7 @@ export default function DailyQuestion() {
             background: 'none',
             border: 'none',
             cursor: 'pointer',
-            color: '#9B8E82',
+            color: 'var(--text-muted)',
             fontSize: 18,
             lineHeight: 1,
             padding: 4
@@ -93,7 +93,7 @@ export default function DailyQuestion() {
             fontSize: '0.7rem',
             textTransform: 'uppercase',
             letterSpacing: '0.08em',
-            color: '#9B8E82',
+            color: 'var(--text-muted)',
             marginBottom: 8,
             fontWeight: 600
           }}
@@ -105,7 +105,7 @@ export default function DailyQuestion() {
         <div
           style={{
             fontSize: '1rem',
-            color: '#3D3229',
+            color: 'var(--text)',
             lineHeight: 1.5,
             marginBottom: 16
           }}
@@ -119,7 +119,7 @@ export default function DailyQuestion() {
           style={{
             padding: '8px 20px',
             borderRadius: 10,
-            background: '#E07A5F',
+            background: 'var(--accent-terracotta)',
             color: '#fff',
             fontSize: '0.85rem',
             fontWeight: 600,

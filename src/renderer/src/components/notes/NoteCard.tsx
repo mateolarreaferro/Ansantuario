@@ -1,23 +1,47 @@
 import { useMemo } from 'react'
 import { motion } from 'motion/react'
 import { useDrag } from '../../hooks/useDrag'
+import { useAppStore } from '../../stores/appStore'
 import { playSfxSelect, playSfxHover } from '../../lib/audio'
-import type { Note } from '../../types/note'
+import type { Note, PhotoNote as PhotoNoteT } from '../../types/note'
+
+const DARK_NOTE_COLORS: Record<string, string> = {
+  '#FFF8E7': '#2E2A24',
+  '#FFE8D6': '#302622',
+  '#FFD6D6': '#302424',
+  '#E8D6FF': '#282430',
+  '#D6FFE8': '#242E28',
+  '#D6EDFF': '#24282E',
+  '#FFF5CC': '#2E2C22',
+  '#FFD1C1': '#302422',
+  '#D6EBD6': '#262E26',
+  '#E8D6F0': '#2A2430'
+}
 import TextNote from './TextNote'
 import VoiceNote from './VoiceNote'
 import LinkNote from './LinkNote'
+import PhotoNote from './PhotoNote'
 import NoteToolbar from './NoteToolbar'
+import ReactionBar from './ReactionBar'
+import RelatedMemories from './RelatedMemories'
 
 interface NoteCardProps {
   note: Note
   isSelected: boolean
   isHighlighted: boolean
   isDimmed: boolean
+  isHidden: boolean
+  overridePos?: { x: number; y: number }
   onSelect: () => void
 }
 
-export default function NoteCard({ note, isSelected, isHighlighted, isDimmed, onSelect }: NoteCardProps) {
+export default function NoteCard({ note, isSelected, isHighlighted, isDimmed, isHidden, overridePos, onSelect }: NoteCardProps) {
   const { displayX, displayY, dragHandlers } = useDrag(note.id, note.x, note.y)
+  const isDarkMode = useAppStore((s) => s.isDarkMode)
+  const noteColor = isDarkMode ? (DARK_NOTE_COLORS[note.color] || '#262220') : note.color
+
+  const finalX = overridePos ? overridePos.x : displayX
+  const finalY = overridePos ? overridePos.y : displayY
 
   // Stable random float params per note so each drifts differently
   const floatStyle = useMemo(() => {
@@ -41,6 +65,8 @@ export default function NoteCard({ note, isSelected, isHighlighted, isDimmed, on
         return <VoiceNote note={note} />
       case 'link':
         return <LinkNote note={note} isSelected={isSelected} />
+      case 'photo':
+        return <PhotoNote note={note as PhotoNoteT} isSelected={isSelected} />
       default:
         return null
     }
@@ -61,15 +87,19 @@ export default function NoteCard({ note, isSelected, isHighlighted, isDimmed, on
       onContextMenu={(e) => { e.preventDefault(); e.stopPropagation() }}
       style={{
         position: 'absolute',
-        left: displayX,
-        top: displayY,
-        transform: `rotate(${note.rotation}deg)`,
+        left: finalX,
+        top: finalY,
+        transform: `rotate(${overridePos ? 0 : note.rotation}deg)`,
         width: note.width,
         minHeight: note.type === 'text' ? 60 : note.height,
+        ...(note.type === 'photo' ? { minHeight: note.height } : {}),
         zIndex: note.zIndex,
-        cursor: 'grab',
+        cursor: overridePos ? 'pointer' : 'grab',
         touchAction: 'none',
-        userSelect: 'none'
+        userSelect: 'none',
+        transition: overridePos !== undefined ? 'left 0.6s cubic-bezier(0.16, 1, 0.3, 1), top 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s ease' : 'none',
+        opacity: isHidden ? 0 : 1,
+        pointerEvents: isHidden ? 'none' : 'auto'
       }}
     >
       {/* Float wrapper — separate from motion.div so CSS animation doesn't clash with framer-motion transform */}
@@ -86,7 +116,7 @@ export default function NoteCard({ note, isSelected, isHighlighted, isDimmed, on
         style={{
           width: '100%',
           minHeight: 'inherit',
-          background: note.color,
+          background: noteColor,
           borderRadius: 'var(--radius-md)',
           boxShadow: isHighlighted
             ? '0 0 0 3px var(--accent-terracotta), var(--shadow-note-hover)'
@@ -136,6 +166,42 @@ export default function NoteCard({ note, isSelected, isHighlighted, isDimmed, on
               {note.createdBy}
             </span>
           </div>
+
+          {/* Sentiment badge */}
+          {note.sentiment?.tone && (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 4,
+              marginTop: 2
+            }}>
+              <span style={{
+                fontSize: '0.55rem',
+                color: 'var(--accent-terracotta)',
+                opacity: 0.6,
+                fontStyle: 'italic'
+              }}>
+                {note.sentiment.tone}
+              </span>
+              {note.sentiment.emotions?.slice(0, 2).map((e) => (
+                <span key={e} style={{
+                  fontSize: '0.5rem',
+                  background: 'rgba(224, 122, 95, 0.1)',
+                  color: 'var(--accent-terracotta)',
+                  padding: '1px 5px',
+                  borderRadius: 8,
+                  opacity: 0.7
+                }}>
+                  {e}
+                </span>
+              ))}
+            </div>
+          )}
+
+          <ReactionBar noteId={note.id} reactions={note.reactions} isSelected={isSelected} />
+
+          {/* Related memories (only when selected) */}
+          {isSelected && <RelatedMemories note={note} />}
         </div>
 
         {/* Reply indicator */}
@@ -159,7 +225,7 @@ export default function NoteCard({ note, isSelected, isHighlighted, isDimmed, on
           </div>
         )}
 
-        {isSelected && <NoteToolbar noteId={note.id} noteColor={note.color} noteType={note.type} noteX={note.x} noteY={note.y} />}
+        {isSelected && <NoteToolbar noteId={note.id} noteColor={note.color} noteType={note.type} noteX={note.x} noteY={note.y} noteContent={note.type === 'text' ? note.content : ''} />}
       </motion.div>
       </div>
     </div>

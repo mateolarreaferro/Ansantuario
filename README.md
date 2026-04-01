@@ -18,8 +18,18 @@ Drop text notes, voice memos, and links onto an infinite canvas that syncs in re
 - **Text notes** — write whatever's on your mind
 - **Voice notes** — record and play back, with automatic Spanish transcription (Groq Whisper)
 - **Link notes** — paste a URL and get a rich preview
+- **Photo notes** — upload images with optional captions
 - **AI search** — find memories by meaning, not just keywords (Claude)
-- **Daily question** — a reflective prompt each day to keep you connected
+- **Daily question** — a reflective prompt each day to keep you connected, with gap-aware topic detection
+- **Sentiment analysis** — each note is analyzed for emotional tone and tagged with emotions like amor, nostalgia, gratitud
+- **AI photo descriptions** — Claude Vision auto-describes uploaded photos, making them searchable
+- **Voice note summaries** — after transcription, Claude generates a short summary and detects emotional tone
+- **Related memories** — select any note to discover thematically connected memories
+- **Weekly digest** — generate a narrative summary of the past week's shared memories, themes, and highlights
+- **Milestone detection** — AI detects anniversaries, recurring themes, streaks, and firsts worth celebrating
+- **On This Day** — resurface memories from the same date in past years
+- **Reactions** — react to notes with heart, smile, flame, sparkle, abrazo, or teardrop
+- **Presence indicators** — see when the other person is online
 - **Background music** — ambient soundtrack with fade in/out
 - **Password protected** — each person picks their identity on first launch
 - **Real-time sync** — everything appears instantly on both screens via Firestore
@@ -87,7 +97,7 @@ The `.dmg` will be in `dist/`. Send it to your person — they just install and 
 - **Firebase** (Firestore) — real-time sync
 - **Zustand** — state management
 - **Motion** (Framer Motion) — animations
-- **Anthropic Claude** — semantic search + question generation
+- **Anthropic Claude** — semantic search, question generation, sentiment analysis, photo descriptions, related memories, weekly digests, milestone detection
 - **Groq Whisper** — speech-to-text
 
 ## License

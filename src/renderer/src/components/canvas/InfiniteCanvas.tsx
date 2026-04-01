@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react'
+import { useCallback, useMemo, useState, useLayoutEffect } from 'react'
 import { AnimatePresence } from 'motion/react'
 import { useCanvas } from '../../hooks/useCanvas'
 import { useNotes } from '../../hooks/useNotes'
@@ -7,10 +7,65 @@ import { useAppStore } from '../../stores/appStore'
 import { playSfxCreate } from '../../lib/audio'
 import GridBackground from './GridBackground'
 import CanvasControls from './CanvasControls'
+import SortTabs from './SortTabs'
+import PresenceIndicator from './PresenceIndicator'
+import OnThisDayWidget from './OnThisDayWidget'
 import NoteCard from '../notes/NoteCard'
 import SearchPanel from '../search/SearchPanel'
 import DailyQuestion from './DailyQuestion'
+import MemorySummaryWidget from './MemorySummaryWidget'
+import MilestoneWidget from './MilestoneWidget'
 import type { Note } from '../../types/note'
+
+const GRID_GAP = 28
+const GRID_PADDING = 80
+
+/** Read actual rendered heights from the DOM for each note */
+function measureNoteHeights(noteIds: string[]): Map<string, number> {
+  const heights = new Map<string, number>()
+  for (const id of noteIds) {
+    const el = document.getElementById(`note-${id}`)
+    if (el) {
+      heights.set(id, el.getBoundingClientRect().height)
+    }
+  }
+  return heights
+}
+
+function computeGridPositions(
+  notes: Note[],
+  containerWidth: number,
+  measuredHeights: Map<string, number>,
+  scale: number
+): Map<string, { x: number; y: number }> {
+  const positions = new Map<string, { x: number; y: number }>()
+  if (notes.length === 0) return positions
+
+  const maxNoteWidth = Math.max(260, ...notes.map((n) => n.width))
+  const cols = Math.max(1, Math.floor((containerWidth - GRID_PADDING * 2) / (maxNoteWidth + GRID_GAP)))
+  const colWidth = maxNoteWidth + GRID_GAP
+
+  // Masonry layout: track the bottom edge of each column independently
+  const colBottoms = new Array(cols).fill(GRID_PADDING)
+
+  for (const note of notes) {
+    let shortest = 0
+    for (let c = 1; c < cols; c++) {
+      if (colBottoms[c] < colBottoms[shortest]) shortest = c
+    }
+
+    const x = GRID_PADDING + shortest * colWidth
+    const y = colBottoms[shortest]
+    positions.set(note.id, { x, y })
+
+    // Use actual DOM height (divided by scale since DOM is scaled) or fall back to stored height + buffer
+    const measured = measuredHeights.get(note.id)
+    const noteHeight = measured ? measured / scale + 10 : note.height + 80
+    colBottoms[shortest] = y + noteHeight + GRID_GAP
+  }
+
+  return positions
+}
 
 export default function InfiniteCanvas() {
   const {
@@ -25,7 +80,73 @@ export default function InfiniteCanvas() {
   } = useCanvas()
 
   const { notes, selectedNoteId, createNoteAt, selectNote, deselectNote } = useNotes()
-  const { isSearchOpen, highlightedNoteIds, dimNonHighlighted } = useAppStore()
+  const { isSearchOpen, highlightedNoteIds, dimNonHighlighted, isDarkMode, sortMode, identity } = useAppStore()
+
+  // Measured DOM heights for grid layout (updated after render)
+  const [measuredHeights, setMeasuredHeights] = useState<Map<string, number>>(new Map())
+
+  // Sort & filter notes for grid view
+  const { sortedNotes, gridPositions, hiddenIds } = useMemo(() => {
+    if (sortMode === 'free') {
+      return { sortedNotes: notes, gridPositions: new Map(), hiddenIds: new Set<string>() }
+    }
+
+    let filtered = [...notes]
+    const hidden = new Set<string>()
+
+    // Filter
+    if (sortMode === 'mine') {
+      const others = notes.filter((n) => n.createdBy !== identity)
+      others.forEach((n) => hidden.add(n.id))
+      filtered = notes.filter((n) => n.createdBy === identity)
+    } else if (sortMode === 'theirs') {
+      const mine = notes.filter((n) => n.createdBy === identity)
+      mine.forEach((n) => hidden.add(n.id))
+      filtered = notes.filter((n) => n.createdBy !== identity)
+    } else if (sortMode === 'favorites') {
+      const noReactions = notes.filter((n) => !n.reactions || Object.keys(n.reactions).length === 0)
+      noReactions.forEach((n) => hidden.add(n.id))
+      filtered = notes.filter((n) => n.reactions && Object.keys(n.reactions).length > 0)
+    }
+
+    // Sort
+    if (sortMode === 'recent' || sortMode === 'mine' || sortMode === 'theirs' || sortMode === 'favorites') {
+      filtered.sort((a, b) => {
+        const ta = a.createdAt?.toDate?.()?.getTime() || 0
+        const tb = b.createdAt?.toDate?.()?.getTime() || 0
+        return tb - ta
+      })
+    } else if (sortMode === 'oldest') {
+      filtered.sort((a, b) => {
+        const ta = a.createdAt?.toDate?.()?.getTime() || 0
+        const tb = b.createdAt?.toDate?.()?.getTime() || 0
+        return ta - tb
+      })
+    }
+
+    const container = document.getElementById('canvas-container')
+    const width = container?.getBoundingClientRect().width || 1200
+    const scale = viewport.scale || 1
+    const positions = computeGridPositions(filtered, width / scale, measuredHeights, scale)
+
+    return { sortedNotes: filtered, gridPositions: positions, hiddenIds: hidden }
+  }, [sortMode, notes, identity, viewport.scale, measuredHeights])
+
+  // After render, measure actual DOM heights and recalculate if they changed
+  useLayoutEffect(() => {
+    if (sortMode === 'free') return
+    const ids = notes.map((n) => n.id)
+    const newHeights = measureNoteHeights(ids)
+    // Only update state if heights actually changed to avoid infinite loop
+    let changed = false
+    for (const [id, h] of newHeights) {
+      if (Math.abs((measuredHeights.get(id) || 0) - h) > 2) {
+        changed = true
+        break
+      }
+    }
+    if (changed) setMeasuredHeights(newHeights)
+  })
 
   // Build reply connectors
   const replyConnectors = useMemo(() => {
@@ -100,7 +221,9 @@ export default function InfiniteCanvas() {
         height: '100%',
         position: 'relative',
         overflow: 'hidden',
-        background: 'linear-gradient(135deg, #F0E8DC, #EDE4F0, #DCE8F0, #F0E4DC, #E4F0E4, #F0E8DC)',
+        background: isDarkMode
+          ? 'linear-gradient(135deg, #1A1614, #1E1A22, #181C22, #1E1A18, #1A201A, #1A1614)'
+          : 'linear-gradient(135deg, #F0E8DC, #EDE4F0, #DCE8F0, #F0E4DC, #E4F0E4, #F0E8DC)',
         backgroundSize: '400% 400%',
         animation: 'canvasGradient 60s ease infinite',
         cursor: 'default',
@@ -150,6 +273,8 @@ export default function InfiniteCanvas() {
           {notes.map((note) => {
             const isHighlighted = highlightedNoteIds.includes(note.id)
             const isDimmed = dimNonHighlighted && highlightedNoteIds.length > 0 && !isHighlighted
+            const isHidden = hiddenIds.has(note.id)
+            const overridePos = sortMode !== 'free' ? gridPositions.get(note.id) : undefined
 
             return (
               <NoteCard
@@ -158,12 +283,16 @@ export default function InfiniteCanvas() {
                 isSelected={note.id === selectedNoteId}
                 isHighlighted={isHighlighted}
                 isDimmed={isDimmed}
+                isHidden={isHidden}
+                overridePos={overridePos}
                 onSelect={() => selectNote(note.id)}
               />
             )
           })}
         </AnimatePresence>
       </div>
+
+      <SortTabs />
 
       <CanvasControls
         scale={viewport.scale}
@@ -199,6 +328,10 @@ export default function InfiniteCanvas() {
       </AnimatePresence>
 
       <DailyQuestion />
+      <OnThisDayWidget />
+      <PresenceIndicator />
+      <MemorySummaryWidget />
+      <MilestoneWidget />
     </div>
   )
 }

@@ -16,6 +16,9 @@ export function useDrag(noteId: string, noteX: number, noteY: number) {
   const onPointerDown = useCallback(
     (e: React.PointerEvent) => {
       if (e.button !== 0) return
+      // Don't start drag when interacting with editable elements
+      const tag = (e.target as HTMLElement).tagName
+      if (tag === 'TEXTAREA' || tag === 'INPUT') return
       e.preventDefault()
 
       draggingRef.current = true

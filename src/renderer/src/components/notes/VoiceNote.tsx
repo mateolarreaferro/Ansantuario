@@ -67,6 +67,16 @@ export default function VoiceNote({ note }: VoiceNoteProps) {
                 transcript,
                 searchText: transcript
               } as Partial<VoiceNoteType>)
+
+              // AI: analyze sentiment + generate summary for voice note
+              try {
+                const sentiment = await (window as any).api.ai.analyzeSentiment(transcript, 'voice')
+                if (sentiment) {
+                  await updateNote(note.id, { sentiment } as any)
+                }
+              } catch (err) {
+                console.error('Voice sentiment analysis failed:', err)
+              }
             }
           } catch (err) {
             console.error('Transcription failed:', err)
@@ -219,8 +229,32 @@ export default function VoiceNote({ note }: VoiceNoteProps) {
             </div>
           )}
           {note.transcript && !transcribing && !retranscribing && (
-            <div style={{ marginTop: 8, fontSize: '0.75rem', color: '#6B5E52', fontStyle: 'italic', lineHeight: 1.4 }}>
-              {note.transcript}
+            <div style={{ marginTop: 8 }}>
+              <div style={{ fontSize: '0.75rem', color: '#6B5E52', fontStyle: 'italic', lineHeight: 1.4 }}>
+                {note.transcript}
+              </div>
+              {(note as any).sentiment?.summary && (
+                <div style={{
+                  marginTop: 6,
+                  fontSize: '0.65rem',
+                  color: 'var(--text-muted)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 4
+                }}>
+                  <span style={{ opacity: 0.6 }}>Resumen:</span> {(note as any).sentiment.summary}
+                </div>
+              )}
+              {(note as any).sentiment?.tone && (
+                <div style={{
+                  marginTop: 3,
+                  fontSize: '0.6rem',
+                  color: 'var(--accent-terracotta)',
+                  opacity: 0.7
+                }}>
+                  Tono: {(note as any).sentiment.tone}
+                </div>
+              )}
             </div>
           )}
           {/* Retry transcription button for notes without transcript */}

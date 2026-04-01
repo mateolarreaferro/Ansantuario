@@ -8,11 +8,17 @@ import InfiniteCanvas from './components/canvas/InfiniteCanvas'
 export default function App() {
   const {
     isAuthenticated,
+    isDarkMode,
     setSearchOpen,
     setSelectedNoteId,
     setHighlightedNoteIds,
     setDimNonHighlighted
   } = useAppStore()
+
+  // Apply dark mode on mount
+  useEffect(() => {
+    document.documentElement.dataset.theme = isDarkMode ? 'dark' : ''
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Keyboard shortcuts
   const handleKeyDown = useCallback(
