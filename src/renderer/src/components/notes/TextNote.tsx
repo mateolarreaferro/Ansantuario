@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { updateNoteContent, updateNote, updateNoteLink, canModify } from '../../lib/firestore-notes'
 import { PUBLIC_WALL } from '../../lib/wall'
 import type { TextNote as TextNoteType } from '../../types/note'
+import { useT } from '../../lib/i18n'
 
 const URL_REGEX = /^https?:\/\/[^\s]+$/
 
@@ -11,6 +12,7 @@ interface TextNoteProps {
 }
 
 export default function TextNote({ note, isSelected }: TextNoteProps) {
+  const t = useT()
   const [content, setContent] = useState(note.content)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -87,7 +89,7 @@ export default function TextNote({ note, isSelected }: TextNoteProps) {
       onPointerDown={(e) => e.stopPropagation()}
       readOnly={!editable}
       maxLength={PUBLIC_WALL ? 1000 : undefined}
-      placeholder={PUBLIC_WALL ? 'Deja algo aquí...' : 'Cuéntame todo...'}
+      placeholder={t('placeholder')}
       style={{
         width: '100%',
         minHeight: 40,

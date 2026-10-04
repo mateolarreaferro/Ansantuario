@@ -3,18 +3,23 @@ import { motion, AnimatePresence } from 'motion/react'
 import { useNotes } from '../../hooks/useNotes'
 import { authorName, setAuthorName } from '../../lib/wall'
 import { becomeModerator } from '../../lib/firestore-notes'
-import { playSfxCreate } from '../../lib/audio'
+import { playSfxCreate, playSfxClick } from '../../lib/audio'
+import { useAppStore } from '../../stores/appStore'
+import { tr, useT, type Lang } from '../../lib/i18n'
 
 /*
-  The open wall's own corner (web build only): what this is, how to leave a
-  note, and the name new notes are signed with. Leaving the name empty keeps
-  them anonymous. Opening the page with ?moderar asks for the site password,
-  after which any note can be deleted.
+  The open wall's own corner (web build only): what this is, the language,
+  the way back to the instructions, and the name new notes are signed with.
+  Leaving the name empty keeps them anonymous. Opening the page with
+  ?moderate (or ?moderar) asks for the site password, after which any note
+  can be deleted.
 */
 export default function PublicWallBar({ count }: { count: number }) {
   const { createNoteAt } = useNotes()
   const [name, setName] = useState(authorName)
   const [message, setMessage] = useState('')
+  const { lang, setLang, setIntroOpen } = useAppStore()
+  const t = useT()
 
   useEffect(() => {
     const onMessage = (e: Event) => setMessage((e as CustomEvent<string>).detail)
@@ -29,8 +34,9 @@ export default function PublicWallBar({ count }: { count: number }) {
   }, [message])
 
   useEffect(() => {
-    if (new URLSearchParams(window.location.search).has('moderar')) {
-      becomeModerator().then((ok) => setMessage(ok ? 'Modo moderación: puedes borrar cualquier nota.' : ''))
+    const query = new URLSearchParams(window.location.search)
+    if (query.has('moderate') || query.has('moderar')) {
+      becomeModerator().then((ok) => setMessage(ok ? tr('moderating') : ''))
     }
   }, [])
 
@@ -60,20 +66,52 @@ export default function PublicWallBar({ count }: { count: number }) {
         color: 'var(--text)'
       }}
     >
-      <div style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-lg)' }}>Ansantuario</div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--space-2)' }}>
+        <div style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-lg)', fontWeight: 700 }}>{t('title')}</div>
+        <div role="group" aria-label="Language / Idioma" style={{ display: 'flex', gap: 2 }}>
+          {(['en', 'es'] as Lang[]).map((l) => (
+            <button
+              key={l}
+              onClick={() => {
+                setLang(l)
+                playSfxClick()
+              }}
+              aria-pressed={lang === l}
+              style={{
+                padding: '2px 8px',
+                borderRadius: 'var(--radius-full)',
+                fontSize: '0.65rem',
+                fontWeight: 600,
+                textTransform: 'uppercase',
+                cursor: 'pointer',
+                background: lang === l ? 'var(--text)' : 'transparent',
+                color: lang === l ? 'var(--bg)' : 'var(--text-muted)'
+              }}
+            >
+              {l}
+            </button>
+          ))}
+        </div>
+      </div>
       <p style={{ margin: 'var(--space-1) 0 var(--space-3)', fontSize: 'var(--text-xs)', lineHeight: 1.5, color: 'var(--text-secondary)' }}>
-        Un muro abierto. Deja una nota con doble clic en cualquier lugar, o aquí abajo.
-        {count > 0 ? ` Ya hay ${count}.` : ''}
+        {t('intro')}
+        {count > 0 ? t('count', { n: count }) : ''}{' '}
+        <button
+          onClick={() => setIntroOpen(true)}
+          style={{ padding: 0, fontSize: 'inherit', color: 'var(--accent-terracotta)', textDecoration: 'underline', textUnderlineOffset: 2, cursor: 'pointer', background: 'transparent' }}
+        >
+          {t('howItWorks')}
+        </button>
       </p>
 
       <label style={{ display: 'block', fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginBottom: 'var(--space-1)' }}>
-        firmar como
+        {t('signAs')}
       </label>
       <input
         value={name}
         maxLength={40}
-        placeholder="anónimo"
-        aria-label="Tu nombre, opcional"
+        placeholder={t('anonymous')}
+        aria-label={t('nameLabel')}
         onChange={(e) => {
           setName(e.target.value)
           setAuthorName(e.target.value.trim())
@@ -92,7 +130,7 @@ export default function PublicWallBar({ count }: { count: number }) {
         }}
       />
       <p style={{ margin: 'var(--space-1) 0 var(--space-3)', fontSize: '0.65rem', color: 'var(--text-muted)' }}>
-        Opcional. Vacío, tus notas quedan anónimas.
+        {t('nameHelp')}
       </p>
 
       <button
@@ -109,7 +147,7 @@ export default function PublicWallBar({ count }: { count: number }) {
           cursor: 'pointer'
         }}
       >
-        + dejar una nota
+        {t('addNote')}
       </button>
 
       <AnimatePresence>

@@ -1,20 +1,22 @@
 import { motion } from 'motion/react'
 import { useAppStore } from '../../stores/appStore'
 import { playSfxClick } from '../../lib/audio'
+import { useT, type Key } from '../../lib/i18n'
 
 type SortMode = 'free' | 'recent' | 'oldest' | 'mine' | 'theirs' | 'favorites'
 
-const TABS: { mode: SortMode; label: string }[] = [
-  { mode: 'free', label: 'Libre' },
-  { mode: 'recent', label: 'Recientes' },
-  { mode: 'oldest', label: 'Antiguas' },
-  { mode: 'mine', label: 'Mías' },
-  { mode: 'theirs', label: 'Suyas' },
-  { mode: 'favorites', label: 'Favoritas' }
+const TABS: { mode: SortMode; label: Key }[] = [
+  { mode: 'free', label: 'sortFree' },
+  { mode: 'recent', label: 'sortRecent' },
+  { mode: 'oldest', label: 'sortOldest' },
+  { mode: 'mine', label: 'sortMine' },
+  { mode: 'theirs', label: 'sortTheirs' },
+  { mode: 'favorites', label: 'sortFavorites' }
 ]
 
 export default function SortTabs() {
   const { sortMode, setSortMode } = useAppStore()
+  const t = useT()
 
   return (
     <div
@@ -70,7 +72,7 @@ export default function SortTabs() {
               }}
             />
           )}
-          {label}
+          {t(label)}
         </button>
       ))}
     </div>

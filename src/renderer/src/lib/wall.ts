@@ -1,6 +1,6 @@
 /*
   The open wall: the web build (npm run build:web, vite.web.config.ts) where
-  anyone can leave a note, hosted at mateolarreaferro.com/ansantuario. The
+  anyone can leave a note, hosted at mateolarreaferro.com/sticky-notes. The
   desktop app is unchanged; PUBLIC_WALL is false there and nothing here runs.
 
   A visitor has no account. They are a random token kept in this browser,
@@ -10,10 +10,11 @@
 export const PUBLIC_WALL = import.meta.env.VITE_PUBLIC_WALL === '1'
 
 /** Where the host serves the open wall's notes. */
-export const API = '/api/ansantuario'
+export const API = '/api/sticky-notes'
 
-const TOKEN_KEY = 'ansantuario-visitor'
-const NAME_KEY = 'ansantuario-name'
+const TOKEN_KEY = 'sticky-notes-visitor'
+const NAME_KEY = 'sticky-notes-name'
+const LANG_KEY = 'sticky-notes-lang'
 let token: string | null = null
 let name: string | null = null
 
@@ -52,4 +53,16 @@ export function authorName(): string {
 export function setAuthorName(value: string): void {
   name = value.slice(0, 40)
   write(NAME_KEY, name)
+}
+
+/** The language the visitor chose, else their browser's: Spanish for Spanish, English otherwise. */
+export function savedLang(): 'en' | 'es' {
+  const saved = read(LANG_KEY)
+  if (saved === 'en' || saved === 'es') return saved
+  return /^es\b/i.test(navigator.language || '') ? 'es' : 'en'
+}
+
+export function saveLang(value: 'en' | 'es'): void {
+  write(LANG_KEY, value)
+  document.documentElement.lang = value
 }

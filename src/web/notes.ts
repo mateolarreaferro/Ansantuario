@@ -4,7 +4,7 @@
   toolbar are unchanged; the notes live on the host site instead of in the
   private Firestore wall, which this build never touches.
 
-  The server (mateolarreaferro.com/api/ansantuario) holds published notes. A
+  The server (mateolarreaferro.com/api/sticky-notes) holds published notes. A
   visitor is a random token kept in this browser; the server stores only a
   hash of it and answers `mine: true` on that visitor's notes. A visitor may
   edit, move and delete only their own; moving someone else's note moves it
@@ -17,6 +17,8 @@ import { Timestamp } from 'firebase/firestore'
 import type { Note, NoteType, UserIdentity, LinkPreview, ReactionType } from '../renderer/src/types/note'
 import { NOTE_COLORS, NOTE_SIZES } from '../renderer/src/types/note'
 import { API, visitorToken, authorName } from '../renderer/src/lib/wall'
+import { tr } from '../renderer/src/lib/i18n'
+import { useAppStore } from '../renderer/src/stores/appStore'
 
 type Wire = {
   id: string
@@ -47,7 +49,8 @@ let version = -1
 let moderator = false
 let timer: ReturnType<typeof setTimeout> | null = null
 
-const headers = () => ({ 'Content-Type': 'application/json', 'x-wall-visitor': visitorToken() })
+// x-wall-lang picks the language of the server's refusals.
+const headers = () => ({ 'Content-Type': 'application/json', 'x-wall-visitor': visitorToken(), 'x-wall-lang': useAppStore.getState().lang })
 const newId = () => Array.from(crypto.getRandomValues(new Uint8Array(12)), (b) => b.toString(16).padStart(2, '0')).join('')
 
 function toNote(w: Wire, me: UserIdentity): Note {
@@ -212,14 +215,14 @@ async function publish(draft: Wire): Promise<void> {
       body: JSON.stringify({ id, content, authorName, x, y, width, height, rotation, color, replyTo })
     })
     const data = await res.json().catch(() => ({}))
-    if (!res.ok) throw new Error(data.error || 'No se pudo publicar la nota.')
+    if (!res.ok) throw new Error(data.error || tr('publishFailed'))
     drafts.delete(id)
     published.set(id, data.note)
     version = -1
     // Anything typed while the note was being published goes up now.
     if (draft.content !== data.note.content) send(id, { content: draft.content })
   } catch (error) {
-    alertOnce(error instanceof Error ? error.message : 'No se pudo publicar la nota.')
+    alertOnce(error instanceof Error ? error.message : tr('publishFailed'))
   } finally {
     publishing.delete(draft.id)
     notify()

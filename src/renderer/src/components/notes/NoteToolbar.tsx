@@ -7,6 +7,7 @@ import { NOTE_COLORS, NOTE_SIZES } from '../../types/note'
 import type { Note, NoteType } from '../../types/note'
 import { useAppStore } from '../../stores/appStore'
 import { playSfxClick, playSfxDelete, playSfxCreate } from '../../lib/audio'
+import { useT } from '../../lib/i18n'
 
 interface NoteToolbarProps {
   noteId: string
@@ -18,6 +19,7 @@ interface NoteToolbarProps {
 }
 
 export default function NoteToolbar({ noteId, noteColor, noteType, noteX, noteY, noteContent }: NoteToolbarProps) {
+  const t = useT()
   const [showColors, setShowColors] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
   const { setSelectedNoteId, identity } = useAppStore()
@@ -84,7 +86,7 @@ export default function NoteToolbar({ noteId, noteColor, noteType, noteX, noteY,
       <button
         onClick={() => { setShowColors(!showColors); setShowConfirm(false) }}
         style={toolbarBtnStyle}
-        title="Color"
+        title={t('color')}
 
       >
         <div style={{ width: 16, height: 16, borderRadius: '50%', background: noteColor, border: '2px solid var(--border)' }} />
@@ -96,7 +98,7 @@ export default function NoteToolbar({ noteId, noteColor, noteType, noteX, noteY,
           key={size}
           onClick={() => handleResize(size)}
           style={{ ...toolbarBtnStyle, fontSize: 'var(--text-xs)', fontWeight: 600 }}
-          title={`Tamaño ${size}`}
+          title={`${t('size')} ${size}`}
         >
           {size}
         </button>
@@ -110,7 +112,7 @@ export default function NoteToolbar({ noteId, noteColor, noteType, noteX, noteY,
         <button
           onClick={handleConvertToVoice}
           style={{ ...toolbarBtnStyle, fontSize: 14 }}
-          title="Grabar voz"
+          title={t('record')}
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
@@ -128,7 +130,7 @@ export default function NoteToolbar({ noteId, noteColor, noteType, noteX, noteY,
             playSfxClick()
           }}
           style={{ ...toolbarBtnStyle, fontSize: 14 }}
-          title="Agregar foto"
+          title={t('photo')}
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
@@ -142,7 +144,7 @@ export default function NoteToolbar({ noteId, noteColor, noteType, noteX, noteY,
       <button
         onClick={handleReply}
         style={toolbarBtnStyle}
-        title="Responder"
+        title={t('reply')}
       >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
           <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
@@ -154,7 +156,7 @@ export default function NoteToolbar({ noteId, noteColor, noteType, noteX, noteY,
       <button
         onClick={() => { setShowConfirm(!showConfirm); setShowColors(false) }}
         style={{ ...toolbarBtnStyle, color: 'var(--accent-terracotta)' }}
-        title="Eliminar"
+        title={t('delete')}
       >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
           <path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
@@ -222,7 +224,7 @@ export default function NoteToolbar({ noteId, noteColor, noteType, noteX, noteY,
               alignItems: 'center'
             }}
           >
-            <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>¿Eliminar?</span>
+            <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>{t('confirmDelete')}</span>
             <button
               onClick={handleDelete}
               style={{
@@ -235,7 +237,7 @@ export default function NoteToolbar({ noteId, noteColor, noteType, noteX, noteY,
                 cursor: 'pointer'
               }}
             >
-              Sí
+              {t('yes')}
             </button>
             <button
               onClick={() => setShowConfirm(false)}
@@ -247,8 +249,7 @@ export default function NoteToolbar({ noteId, noteColor, noteType, noteX, noteY,
                 cursor: 'pointer'
               }}
             >
-              No
-
+              {t('no')}
             </button>
           </motion.div>
         )}

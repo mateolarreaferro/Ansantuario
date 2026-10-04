@@ -1,6 +1,8 @@
 import { motion, AnimatePresence } from 'motion/react'
 import { useAppStore } from '../../stores/appStore'
 import { toggleMusic, skipTrack, getCurrentTrack, getPlaylist } from '../../lib/audio'
+import { useT } from '../../lib/i18n'
+import { PUBLIC_WALL } from '../../lib/wall'
 
 interface CanvasControlsProps {
   scale: number
@@ -17,6 +19,7 @@ export default function CanvasControls({
 }: CanvasControlsProps) {
   const { setSearchOpen, isSearchOpen, isMusicEnabled, setMusicEnabled, currentTrackTitle, setCurrentTrackTitle, isDarkMode, toggleDarkMode } = useAppStore()
   const hasMultipleTracks = getPlaylist().length > 1
+  const t = useT()
 
   const handleToggleMusic = () => {
     const nowPlaying = toggleMusic()
@@ -45,94 +48,126 @@ export default function CanvasControls({
           zIndex: 'var(--z-toolbar)' as unknown as number
         }}
       >
-        {/* Mini music player */}
-        <div
-          style={{
-            height: 40,
-            borderRadius: 'var(--radius-xl)',
-            background: 'var(--white)',
-            boxShadow: 'var(--shadow-md)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 'var(--space-1)',
-            padding: '0 var(--space-2)',
-            border: '1px solid var(--border)'
-          }}
-        >
-          {/* Prev */}
-          {hasMultipleTracks && (
-            <motion.button
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              onClick={() => handleSkip('prev')}
-              style={playerBtnStyle}
-              title="Anterior"
-            >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M6 6h2v12H6zm3.5 6 8.5 6V6z"/>
-              </svg>
-            </motion.button>
-          )}
-
-          {/* Play / Pause */}
+        {/* The open wall names no song: one music-note button turns it on or off */}
+        {PUBLIC_WALL ? (
           <motion.button
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             onClick={handleToggleMusic}
-            style={playerBtnStyle}
-            title={isMusicEnabled ? 'Pausar' : 'Reproducir'}
+            aria-pressed={isMusicEnabled}
+            aria-label={isMusicEnabled ? t('pause') : t('play')}
+            title={isMusicEnabled ? t('pause') : t('play')}
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 'var(--radius-xl)',
+              background: 'var(--white)',
+              boxShadow: 'var(--shadow-md)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              border: '1px solid var(--border)',
+              color: isMusicEnabled ? 'var(--accent-terracotta)' : 'var(--text-muted)',
+              transition: 'color 0.15s'
+            }}
           >
-            {isMusicEnabled ? (
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                <rect x="6" y="4" width="4" height="16" rx="1"/>
-                <rect x="14" y="4" width="4" height="16" rx="1"/>
-              </svg>
-            ) : (
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                <polygon points="5 3 19 12 5 21 5 3"/>
-              </svg>
-            )}
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 18V5l12-2v13"/>
+              <circle cx="6" cy="18" r="3"/>
+              <circle cx="18" cy="16" r="3"/>
+              {!isMusicEnabled && <line x1="2" y1="2" x2="22" y2="22"/>}
+            </svg>
           </motion.button>
+        ) : (
+          <div
+            style={{
+              height: 40,
+              borderRadius: 'var(--radius-xl)',
+              background: 'var(--white)',
+              boxShadow: 'var(--shadow-md)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 'var(--space-1)',
+              padding: '0 var(--space-2)',
+              border: '1px solid var(--border)'
+            }}
+          >
+            {/* Prev */}
+            {hasMultipleTracks && (
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={() => handleSkip('prev')}
+                style={playerBtnStyle}
+                title={t('previous')}
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M6 6h2v12H6zm3.5 6 8.5 6V6z"/>
+                </svg>
+              </motion.button>
+            )}
 
-          {/* Next */}
-          {hasMultipleTracks && (
+            {/* Play / Pause */}
             <motion.button
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
-              onClick={() => handleSkip('next')}
+              onClick={handleToggleMusic}
               style={playerBtnStyle}
-              title="Siguiente"
+              title={isMusicEnabled ? t('pause') : t('play')}
             >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/>
-              </svg>
+              {isMusicEnabled ? (
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                  <rect x="6" y="4" width="4" height="16" rx="1"/>
+                  <rect x="14" y="4" width="4" height="16" rx="1"/>
+                </svg>
+              ) : (
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                  <polygon points="5 3 19 12 5 21 5 3"/>
+                </svg>
+              )}
             </motion.button>
-          )}
 
-          {/* Track title */}
-          <AnimatePresence mode="wait">
-            <motion.span
-              key={currentTrackTitle}
-              initial={{ opacity: 0, y: 4 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -4 }}
-              transition={{ duration: 0.2 }}
-              style={{
-                fontSize: 'var(--text-xs)',
-                color: 'var(--text-muted)',
-                fontWeight: 500,
-                paddingRight: 'var(--space-2)',
-                paddingLeft: 'var(--space-1)',
-                maxWidth: 100,
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap'
-              }}
-            >
-              {currentTrackTitle}
-            </motion.span>
-          </AnimatePresence>
-        </div>
+            {/* Next */}
+            {hasMultipleTracks && (
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={() => handleSkip('next')}
+                style={playerBtnStyle}
+                title={t('next')}
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/>
+                </svg>
+              </motion.button>
+            )}
+
+            {/* Track title */}
+            <AnimatePresence mode="wait">
+              <motion.span
+                key={currentTrackTitle}
+                initial={{ opacity: 0, y: 4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -4 }}
+                transition={{ duration: 0.2 }}
+                style={{
+                  fontSize: 'var(--text-xs)',
+                  color: 'var(--text-muted)',
+                  fontWeight: 500,
+                  paddingRight: 'var(--space-2)',
+                  paddingLeft: 'var(--space-1)',
+                  maxWidth: 100,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                {currentTrackTitle}
+              </motion.span>
+            </AnimatePresence>
+          </div>
+        )}
 
         {/* Dark mode toggle */}
         <motion.button
@@ -153,7 +188,7 @@ export default function CanvasControls({
             color: 'var(--text-secondary)',
             transition: 'background 0.15s, color 0.15s'
           }}
-          title={isDarkMode ? 'Modo claro' : 'Modo oscuro'}
+          title={isDarkMode ? t('lightMode') : t('darkMode')}
         >
           {isDarkMode ? (
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -200,7 +235,7 @@ export default function CanvasControls({
             <circle cx="11" cy="11" r="8"/>
             <line x1="21" y1="21" x2="16.65" y2="16.65"/>
           </svg>
-          Buscar
+          {t('search')}
         </motion.button>
       </div>
 
@@ -221,7 +256,7 @@ export default function CanvasControls({
           whileTap={{ scale: 0.9 }}
           onClick={onZoomIn}
           style={buttonStyle}
-          title="Acercar"
+          title={t('zoomIn')}
         >
           +
         </motion.button>
@@ -234,7 +269,7 @@ export default function CanvasControls({
             fontSize: 'var(--text-xs)',
             fontWeight: 500
           }}
-          title="Restablecer vista"
+          title={t('zoomReset')}
         >
           {Math.round(scale * 100)}%
         </motion.button>
@@ -243,7 +278,7 @@ export default function CanvasControls({
           whileTap={{ scale: 0.9 }}
           onClick={onZoomOut}
           style={buttonStyle}
-          title="Alejar"
+          title={t('zoomOut')}
         >
           −
         </motion.button>

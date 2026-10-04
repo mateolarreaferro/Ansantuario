@@ -43,18 +43,27 @@ IPC handlers in `src/main/ipc-handlers.ts` bridge main ↔ renderer.
 Firebase collections: `notes`, `daily_questions`, `presence`
 Firebase Storage: audio files, images
 
-## The open wall (web build)
+## The open wall (web build): sticky notes
 
-`npm run build:web` builds the renderer as a public web page, hosted at
-mateolarreaferro.com/ansantuario, where anyone can leave a text note, signed or
-anonymous. `vite.web.config.ts` swaps `lib/firestore-notes` for
-`src/web/notes.ts` (which talks to the host's `/api/ansantuario`), the other
-Firebase modules for `src/web/stubs.ts`, and `window.api` for `src/web/api.ts`;
-importing anything else from `firebase/*` fails the build, and no `.env` is
-read, so the private wall can't leak into it. In app code, `PUBLIC_WALL`
-(`lib/wall.ts`) gates what differs: no password screen, the private widgets
-hidden, `PublicWallBar` for the name field, and `canModify` / `canDelete`
-(exported by both notes modules) so a visitor touches only their own notes.
+`npm run build:web` builds the renderer as a public web page called "sticky
+notes", hosted at mateolarreaferro.com/sticky-notes, where anyone can leave a
+text note, signed or anonymous. `vite.web.config.ts` swaps `lib/firestore-notes`
+for `src/web/notes.ts` (which talks to the host's `/api/sticky-notes`), the
+other Firebase modules and the password screen for `src/web/stubs.ts`, and
+`window.api` for `src/web/api.ts`; importing anything else from `firebase/*`
+fails the build, and no `.env` is read, so the private wall can't leak into it.
+The page never names this app or its song: the build sets the title, points the
+playlist at an untitled `music.mp3`, and the web player is one music-note
+button. In app code, `PUBLIC_WALL` (`lib/wall.ts`) gates what differs: no
+password screen, the private widgets hidden, `PublicWallBar` for the name field
+and language, `WallIntro` (the splash with the instructions; closing it is the
+press that starts the music), and `canModify` / `canDelete` (exported by both
+notes modules) so a visitor touches only their own notes.
+
+The web page speaks English or Spanish (`lib/i18n.ts`, `useT()` in components,
+`tr()` outside React). The desktop app is always Spanish, so the `es` column
+must keep the desktop's wording; where the web page says something different,
+the table picks it with `PUBLIC_WALL`.
 
 ## Environment
 

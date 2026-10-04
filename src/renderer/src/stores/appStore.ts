@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import type { Note, UserIdentity } from '../types/note'
-import { PUBLIC_WALL, visitorToken } from '../lib/wall'
+import { PUBLIC_WALL, visitorToken, savedLang, saveLang } from '../lib/wall'
 
 interface Viewport {
   x: number
@@ -54,6 +54,13 @@ interface AppState {
   isOnThisDayDismissed: boolean
   setOnThisDayDismissed: (v: boolean) => void
 
+  // Language: the desktop app is Spanish; the open wall lets the visitor choose
+  lang: 'en' | 'es'
+  setLang: (lang: 'en' | 'es') => void
+  // The open wall's splash, which also holds the instructions
+  isIntroOpen: boolean
+  setIntroOpen: (open: boolean) => void
+
   // Sort/filter
   sortMode: 'free' | 'recent' | 'oldest' | 'mine' | 'theirs' | 'favorites'
   setSortMode: (mode: 'free' | 'recent' | 'oldest' | 'mine' | 'theirs' | 'favorites') => void
@@ -96,9 +103,10 @@ export const useAppStore = create<AppState>((set) => ({
   setDimNonHighlighted: (dim) => set({ dimNonHighlighted: dim }),
 
   // Audio
-  isMusicEnabled: true,
+  // The open wall starts silent: browsers only allow sound after a press (the splash's).
+  isMusicEnabled: !PUBLIC_WALL,
   setMusicEnabled: (enabled) => set({ isMusicEnabled: enabled }),
-  currentTrackTitle: 'Bicho',
+  currentTrackTitle: PUBLIC_WALL ? '' : 'Bicho',
   setCurrentTrackTitle: (title) => set({ currentTrackTitle: title }),
 
   // Dark mode
@@ -114,6 +122,15 @@ export const useAppStore = create<AppState>((set) => ({
   // On This Day
   isOnThisDayDismissed: false,
   setOnThisDayDismissed: (v) => set({ isOnThisDayDismissed: v }),
+
+  // Language and splash
+  lang: PUBLIC_WALL ? savedLang() : 'es',
+  setLang: (lang) => {
+    saveLang(lang)
+    set({ lang })
+  },
+  isIntroOpen: PUBLIC_WALL,
+  setIntroOpen: (open) => set({ isIntroOpen: open }),
 
   // Sort/filter
   sortMode: 'free',

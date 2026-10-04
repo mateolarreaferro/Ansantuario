@@ -6,6 +6,7 @@ import { REACTION_TYPES, REACTION_COLORS } from '../../types/note'
 import type { ReactionType, UserIdentity } from '../../types/note'
 import ReactionIcon from './ReactionIcons'
 import { playSfxClick } from '../../lib/audio'
+import { useT } from '../../lib/i18n'
 
 interface ReactionBarProps {
   noteId: string
@@ -14,6 +15,7 @@ interface ReactionBarProps {
 }
 
 export default function ReactionBar({ noteId, reactions, isSelected }: ReactionBarProps) {
+  const t = useT()
   const [showPicker, setShowPicker] = useState(false)
   const [isHovered, setIsHovered] = useState(false)
   const identity = useAppStore((s) => s.identity)
@@ -148,7 +150,7 @@ export default function ReactionBar({ noteId, reactions, isSelected }: ReactionB
                     background: iMine ? `${REACTION_COLORS[type]}18` : 'transparent',
                     color: REACTION_COLORS[type]
                   }}
-                  title={type}
+                  title={t(type)}
                 >
                   <ReactionIcon type={type} size={16} filled={iMine} color={REACTION_COLORS[type]} />
                 </motion.button>

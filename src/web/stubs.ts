@@ -36,3 +36,8 @@ export async function getPastQuestions(): Promise<[]> {
   return []
 }
 export async function markQuestionAnswered(): Promise<void> {}
+
+// components/auth/PasswordScreen: the open wall has no password screen
+export default function PasswordScreen(): null {
+  return null
+}

@@ -18,6 +18,8 @@ import MilestoneWidget from './MilestoneWidget'
 import type { Note } from '../../types/note'
 import { PUBLIC_WALL } from '../../lib/wall'
 import PublicWallBar from './PublicWallBar'
+import WallIntro from './WallIntro'
+import { useT } from '../../lib/i18n'
 
 const GRID_GAP = 28
 const GRID_PADDING = 80
@@ -82,7 +84,8 @@ export default function InfiniteCanvas() {
   } = useCanvas()
 
   const { notes, selectedNoteId, createNoteAt, selectNote, deselectNote } = useNotes()
-  const { isSearchOpen, highlightedNoteIds, dimNonHighlighted, isDarkMode, sortMode, identity } = useAppStore()
+  const { isSearchOpen, highlightedNoteIds, dimNonHighlighted, isDarkMode, sortMode, identity, isIntroOpen } = useAppStore()
+  const t = useT()
 
   // Measured DOM heights for grid layout (updated after render)
   const [measuredHeights, setMeasuredHeights] = useState<Map<string, number>>(new Map())
@@ -319,9 +322,9 @@ export default function InfiniteCanvas() {
           }}
         >
           <span style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-2xl)', display: 'block', color: 'var(--text-secondary)', marginBottom: 'var(--space-2)' }}>
-            No te guardes nada
+            {t('emptyTitle')}
           </span>
-          Haz clic derecho o doble clic en cualquier lugar para dejar una nota
+          {t('emptyHint')}
         </div>
       )}
 
@@ -330,7 +333,10 @@ export default function InfiniteCanvas() {
       </AnimatePresence>
 
       {PUBLIC_WALL ? (
-        <PublicWallBar count={notes.length} />
+        <>
+          <PublicWallBar count={notes.length} />
+          <AnimatePresence>{isIntroOpen && <WallIntro />}</AnimatePresence>
+        </>
       ) : (
         <>
           <DailyQuestion />

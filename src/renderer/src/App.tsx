@@ -2,6 +2,7 @@ import { useEffect, useCallback } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useAppStore } from './stores/appStore'
 import { startMusic } from './lib/audio'
+import { PUBLIC_WALL } from './lib/wall'
 import PasswordScreen from './components/auth/PasswordScreen'
 import InfiniteCanvas from './components/canvas/InfiniteCanvas'
 
@@ -47,9 +48,10 @@ export default function App() {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [handleKeyDown])
 
-  // Start background music once authenticated
+  // Start background music once authenticated. The open wall waits for its
+  // splash to be closed instead, since browsers allow sound only after a press.
   useEffect(() => {
-    if (isAuthenticated) startMusic()
+    if (isAuthenticated && !PUBLIC_WALL) startMusic()
   }, [isAuthenticated])
 
   return (

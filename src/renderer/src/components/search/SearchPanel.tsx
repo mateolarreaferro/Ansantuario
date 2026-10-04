@@ -5,8 +5,10 @@ import { useCanvas } from '../../hooks/useCanvas'
 import { useAppStore } from '../../stores/appStore'
 import { playSfxOpen } from '../../lib/audio'
 import SearchResultCard from './SearchResultCard'
+import { useT } from '../../lib/i18n'
 
 export default function SearchPanel() {
+  const t = useT()
   const { query, results, isSearching, error, search, clearSearch } = useSearch()
   const { flyTo } = useCanvas()
   const {
@@ -90,7 +92,7 @@ export default function SearchPanel() {
             color: 'var(--text)'
           }}
         >
-          Buscar Recuerdos
+          {t('searchTitle')}
         </h2>
         <button
           onClick={handleClose}
@@ -118,7 +120,7 @@ export default function SearchPanel() {
             type="text"
             value={query}
             onChange={(e) => search(e.target.value)}
-            placeholder="¿Qué estás buscando?"
+            placeholder={t('searchPlaceholder')}
             autoFocus
             style={{
               width: '100%',
@@ -175,7 +177,7 @@ export default function SearchPanel() {
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
               <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
             </svg>
-            {dimNonHighlighted ? 'Mostrando solo coincidencias' : 'Enfocar en coincidencias'}
+            {dimNonHighlighted ? t('searchFocusOn') : t('searchFocusOff')}
           </button>
         </div>
       )}
@@ -194,13 +196,13 @@ export default function SearchPanel() {
         {isSearching && (
           <div style={{ textAlign: 'center', padding: 'var(--space-6)', color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>
             <div style={{ width: 20, height: 20, border: '2px solid var(--border)', borderTopColor: 'var(--accent-terracotta)', borderRadius: '50%', animation: 'spin 0.6s linear infinite', margin: '0 auto var(--space-2)' }} />
-            Buscando...
+            {t('searching')}
           </div>
         )}
 
         {!isSearching && query && results.length === 0 && (
           <div style={{ textAlign: 'center', padding: 'var(--space-6)', color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>
-            No se encontraron recuerdos
+            {t('searchNone')}
           </div>
         )}
 
@@ -222,10 +224,10 @@ export default function SearchPanel() {
 
         {!query && (
           <div style={{ textAlign: 'center', padding: 'var(--space-8)', color: 'var(--text-muted)', fontSize: 'var(--text-sm)', lineHeight: 1.8 }}>
-            Pregunta sobre tus recuerdos...
+            {t('searchHint')}
             <br />
             <span style={{ fontSize: 'var(--text-xs)', opacity: 0.7 }}>
-              Las notas que coincidan brillarán en el lienzo
+              {t('searchHintMore')}
             </span>
           </div>
         )}

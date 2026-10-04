@@ -25,6 +25,7 @@ import NoteToolbar from './NoteToolbar'
 import ReactionBar from './ReactionBar'
 import RelatedMemories from './RelatedMemories'
 import { PUBLIC_WALL } from '../../lib/wall'
+import { useT } from '../../lib/i18n'
 
 interface NoteCardProps {
   note: Note
@@ -37,6 +38,8 @@ interface NoteCardProps {
 }
 
 export default function NoteCard({ note, isSelected, isHighlighted, isDimmed, isHidden, overridePos, onSelect }: NoteCardProps) {
+  const t = useT()
+  const lang = useAppStore((s) => s.lang)
   const { displayX, displayY, dragHandlers } = useDrag(note.id, note.x, note.y)
   const isDarkMode = useAppStore((s) => s.isDarkMode)
   const noteColor = isDarkMode ? (DARK_NOTE_COLORS[note.color] || '#262220') : note.color
@@ -160,11 +163,11 @@ export default function NoteCard({ note, isSelected, isHighlighted, isDimmed, is
 
           <div style={{ marginTop: 'var(--space-2)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontSize: '0.6rem', color: 'var(--text-muted)', opacity: 0.5 }}>
-              {note.createdAt?.toDate().toLocaleDateString('es', { day: 'numeric', month: 'short', year: 'numeric' })}{' '}
-              {note.createdAt?.toDate().toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })}
+              {note.createdAt?.toDate().toLocaleDateString(lang, { day: 'numeric', month: 'short', year: 'numeric' })}{' '}
+              {note.createdAt?.toDate().toLocaleTimeString(lang, { hour: '2-digit', minute: '2-digit' })}
             </span>
             <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'capitalize', opacity: 0.6 }}>
-              {PUBLIC_WALL ? note.authorName || 'anónimo' : note.createdBy}
+              {PUBLIC_WALL ? note.authorName || t('anonymous') : note.createdBy}
             </span>
           </div>
 
