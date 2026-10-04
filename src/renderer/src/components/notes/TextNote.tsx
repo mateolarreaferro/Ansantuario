@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
-import { updateNoteContent, updateNote, updateNoteLink } from '../../lib/firestore-notes'
+import { updateNoteContent, updateNote, updateNoteLink, canModify } from '../../lib/firestore-notes'
+import { PUBLIC_WALL } from '../../lib/wall'
 import type { TextNote as TextNoteType } from '../../types/note'
 
 const URL_REGEX = /^https?:\/\/[^\s]+$/
@@ -41,7 +42,10 @@ export default function TextNote({ note, isSelected }: TextNoteProps) {
     }, 300)
   }
 
+  const editable = canModify(note)
+
   const handlePaste = async (e: React.ClipboardEvent) => {
+    if (PUBLIC_WALL) return
     const text = e.clipboardData.getData('text/plain').trim()
     if (URL_REGEX.test(text) && !content.trim()) {
       e.preventDefault()
@@ -61,7 +65,7 @@ export default function TextNote({ note, isSelected }: TextNoteProps) {
       updateNoteContent(note.id, content)
 
       // AI: analyze sentiment in background when content is substantial
-      if (content.trim().length >= 20) {
+      if (!PUBLIC_WALL && content.trim().length >= 20) {
         ;(window as any).api.ai.analyzeSentiment(content, 'text')
           .then((sentiment: any) => {
             if (sentiment) {
@@ -81,7 +85,9 @@ export default function TextNote({ note, isSelected }: TextNoteProps) {
       onPaste={handlePaste}
       onBlur={handleBlur}
       onPointerDown={(e) => e.stopPropagation()}
-      placeholder="Cuéntame todo..."
+      readOnly={!editable}
+      maxLength={PUBLIC_WALL ? 1000 : undefined}
+      placeholder={PUBLIC_WALL ? 'Deja algo aquí...' : 'Cuéntame todo...'}
       style={{
         width: '100%',
         minHeight: 40,
@@ -89,7 +95,7 @@ export default function TextNote({ note, isSelected }: TextNoteProps) {
         fontSize: 'var(--text-sm)',
         lineHeight: 1.6,
         color: 'var(--text)',
-        cursor: 'text',
+        cursor: editable ? 'text' : 'default',
         fontFamily: 'var(--font-body)'
       }}
     />

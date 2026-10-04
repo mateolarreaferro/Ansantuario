@@ -8,3 +8,6 @@ out/
 *.zip
 *.log
 Thumbs.db
+
+# open wall web build
+dist-web/

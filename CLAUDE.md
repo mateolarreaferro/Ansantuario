@@ -43,6 +43,19 @@ IPC handlers in `src/main/ipc-handlers.ts` bridge main ↔ renderer.
 Firebase collections: `notes`, `daily_questions`, `presence`
 Firebase Storage: audio files, images
 
+## The open wall (web build)
+
+`npm run build:web` builds the renderer as a public web page, hosted at
+mateolarreaferro.com/ansantuario, where anyone can leave a text note, signed or
+anonymous. `vite.web.config.ts` swaps `lib/firestore-notes` for
+`src/web/notes.ts` (which talks to the host's `/api/ansantuario`), the other
+Firebase modules for `src/web/stubs.ts`, and `window.api` for `src/web/api.ts`;
+importing anything else from `firebase/*` fails the build, and no `.env` is
+read, so the private wall can't leak into it. In app code, `PUBLIC_WALL`
+(`lib/wall.ts`) gates what differs: no password screen, the private widgets
+hidden, `PublicWallBar` for the name field, and `canModify` / `canDelete`
+(exported by both notes modules) so a visitor touches only their own notes.
+
 ## Environment
 
 API keys via `.env` (gitignored). See `.env.example`. Renderer vars use `VITE_` prefix, main process vars use `MAIN_VITE_` prefix.

@@ -129,6 +129,24 @@ export function subscribeToNotes(
   })
 }
 
+/** Both people on the private wall may edit every note. */
+export function canModify(_note: Pick<Note, 'id'>): boolean {
+  return true
+}
+
+export function canDelete(_note: Pick<Note, 'id'>): boolean {
+  return true
+}
+
+/** Moderation belongs to the open wall; the private wall has two equals. */
+export function isModerator(): boolean {
+  return false
+}
+
+export async function becomeModerator(): Promise<boolean> {
+  return false
+}
+
 export async function toggleReaction(
   noteId: string,
   reaction: ReactionType,

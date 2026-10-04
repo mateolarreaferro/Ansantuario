@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import type { Note, UserIdentity } from '../types/note'
+import { PUBLIC_WALL, visitorToken } from '../lib/wall'
 
 interface Viewport {
   x: number
@@ -62,9 +63,10 @@ const DEFAULT_VIEWPORT: Viewport = { x: 0, y: 0, scale: 1 }
 
 export const useAppStore = create<AppState>((set) => ({
   // Auth
-  isAuthenticated: false,
-  isFirstLaunch: true,
-  identity: null,
+  // The open wall has no password screen; a visitor is this browser's token.
+  isAuthenticated: PUBLIC_WALL,
+  isFirstLaunch: !PUBLIC_WALL,
+  identity: PUBLIC_WALL ? (visitorToken() as UserIdentity) : null,
   setAuthenticated: (value) => set({ isAuthenticated: value }),
   setFirstLaunch: (value) => set({ isFirstLaunch: value }),
   setIdentity: (identity) => set({ identity }),

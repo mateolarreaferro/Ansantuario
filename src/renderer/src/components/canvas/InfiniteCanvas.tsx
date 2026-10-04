@@ -16,6 +16,8 @@ import DailyQuestion from './DailyQuestion'
 import MemorySummaryWidget from './MemorySummaryWidget'
 import MilestoneWidget from './MilestoneWidget'
 import type { Note } from '../../types/note'
+import { PUBLIC_WALL } from '../../lib/wall'
+import PublicWallBar from './PublicWallBar'
 
 const GRID_GAP = 28
 const GRID_PADDING = 80
@@ -327,11 +329,17 @@ export default function InfiniteCanvas() {
         {isSearchOpen && <SearchPanel />}
       </AnimatePresence>
 
-      <DailyQuestion />
-      <OnThisDayWidget />
-      <PresenceIndicator />
-      <MemorySummaryWidget />
-      <MilestoneWidget />
+      {PUBLIC_WALL ? (
+        <PublicWallBar count={notes.length} />
+      ) : (
+        <>
+          <DailyQuestion />
+          <OnThisDayWidget />
+          <PresenceIndicator />
+          <MemorySummaryWidget />
+          <MilestoneWidget />
+        </>
+      )}
     </div>
   )
 }

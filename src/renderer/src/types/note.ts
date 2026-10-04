@@ -49,6 +49,8 @@ export interface BaseNote {
   reactions?: Record<string, UserIdentity[]>
   sentiment?: NoteSentiment
   aiDescription?: string  // AI-generated description for photos
+  authorName?: string     // open wall only: the visitor's name, if they gave one
+  mine?: boolean          // open wall only: written by this browser's visitor
 }
 
 export interface TextNote extends BaseNote {

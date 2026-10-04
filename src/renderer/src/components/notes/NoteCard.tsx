@@ -24,6 +24,7 @@ import PhotoNote from './PhotoNote'
 import NoteToolbar from './NoteToolbar'
 import ReactionBar from './ReactionBar'
 import RelatedMemories from './RelatedMemories'
+import { PUBLIC_WALL } from '../../lib/wall'
 
 interface NoteCardProps {
   note: Note
@@ -163,7 +164,7 @@ export default function NoteCard({ note, isSelected, isHighlighted, isDimmed, is
               {note.createdAt?.toDate().toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })}
             </span>
             <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'capitalize', opacity: 0.6 }}>
-              {note.createdBy}
+              {PUBLIC_WALL ? note.authorName || 'anónimo' : note.createdBy}
             </span>
           </div>
 
@@ -201,7 +202,7 @@ export default function NoteCard({ note, isSelected, isHighlighted, isDimmed, is
           <ReactionBar noteId={note.id} reactions={note.reactions} isSelected={isSelected} />
 
           {/* Related memories (only when selected) */}
-          {isSelected && <RelatedMemories note={note} />}
+          {isSelected && !PUBLIC_WALL && <RelatedMemories note={note} />}
         </div>
 
         {/* Reply indicator */}

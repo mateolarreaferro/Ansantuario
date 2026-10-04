@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
-import { updateNote, deleteNote, addNote } from '../../lib/firestore-notes'
+import { updateNote, deleteNote, addNote, canModify, canDelete } from '../../lib/firestore-notes'
+import { PUBLIC_WALL } from '../../lib/wall'
 import { deleteField } from 'firebase/firestore'
 import { NOTE_COLORS, NOTE_SIZES } from '../../types/note'
 import type { Note, NoteType } from '../../types/note'
@@ -20,6 +21,9 @@ export default function NoteToolbar({ noteId, noteColor, noteType, noteX, noteY,
   const [showColors, setShowColors] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
   const { setSelectedNoteId, identity } = useAppStore()
+  // On the open wall a visitor styles only their own notes; a moderator may also delete others'.
+  const editable = canModify({ id: noteId })
+  const deletable = canDelete({ id: noteId })
 
   const handleColorChange = (color: string) => {
     updateNote(noteId, { color } as Partial<Note>)
@@ -74,6 +78,8 @@ export default function NoteToolbar({ noteId, noteColor, noteType, noteX, noteY,
         whiteSpace: 'nowrap'
       }}
     >
+      {editable && (
+        <>
       {/* Color picker toggle */}
       <button
         onClick={() => { setShowColors(!showColors); setShowConfirm(false) }}
@@ -96,8 +102,11 @@ export default function NoteToolbar({ noteId, noteColor, noteType, noteX, noteY,
         </button>
       ))}
 
+        </>
+      )}
+
       {/* Mic — convert text note to voice */}
-      {noteType === 'text' && (
+      {noteType === 'text' && !PUBLIC_WALL && (
         <button
           onClick={handleConvertToVoice}
           style={{ ...toolbarBtnStyle, fontSize: 14 }}
@@ -112,7 +121,7 @@ export default function NoteToolbar({ noteId, noteColor, noteType, noteX, noteY,
       )}
 
       {/* Photo — convert text note to photo */}
-      {noteType === 'text' && (
+      {noteType === 'text' && !PUBLIC_WALL && (
         <button
           onClick={() => {
             updateNote(noteId, { type: 'photo', imageUrl: '', imagePath: '', caption: noteContent || '', content: deleteField(), searchText: noteContent || 'Foto' } as any)
@@ -141,6 +150,7 @@ export default function NoteToolbar({ noteId, noteColor, noteType, noteX, noteY,
       </button>
 
       {/* Delete */}
+      {deletable && (
       <button
         onClick={() => { setShowConfirm(!showConfirm); setShowColors(false) }}
         style={{ ...toolbarBtnStyle, color: 'var(--accent-terracotta)' }}
@@ -151,6 +161,7 @@ export default function NoteToolbar({ noteId, noteColor, noteType, noteX, noteY,
           <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
         </svg>
       </button>
+      )}
 
       {/* Color picker popup */}
       <AnimatePresence>
